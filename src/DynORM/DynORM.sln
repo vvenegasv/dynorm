@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.15
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynORM", "DynORM\DynORM.csproj", "{568EC403-3C87-460D-A5AD-70451220E66A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynORM.UnitTest", "DynORM.UnitTest\DynORM.UnitTest.csproj", "{12E023DB-DC5A-488D-9B5B-3C247549A42A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{568EC403-3C87-460D-A5AD-70451220E66A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{568EC403-3C87-460D-A5AD-70451220E66A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{568EC403-3C87-460D-A5AD-70451220E66A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{568EC403-3C87-460D-A5AD-70451220E66A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{12E023DB-DC5A-488D-9B5B-3C247549A42A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{12E023DB-DC5A-488D-9B5B-3C247549A42A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{12E023DB-DC5A-488D-9B5B-3C247549A42A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{12E023DB-DC5A-488D-9B5B-3C247549A42A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
