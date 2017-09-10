@@ -5,7 +5,7 @@ using DynORM.Models;
 
 namespace DynORM.Attributes
 {
-    public class PropertyTypeAttribute
+    public class PropertyTypeAttribute: Attribute
     {
         public PropertyType PropertyType { get; set; }
     }

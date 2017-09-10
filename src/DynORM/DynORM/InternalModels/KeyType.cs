@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace DynORM.Models
+namespace DynORM.InternalModels
 {
-    public enum PropertyType
+    internal enum KeyType
     {
-        String, Number, Boolean
+        PrimaryKey, Gsi
     }
 }

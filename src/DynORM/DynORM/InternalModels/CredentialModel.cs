@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace DynORM.Models
+﻿namespace DynORM.InternalModels
 {
     internal class CredentialModel
     {

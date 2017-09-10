@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text;
 using Amazon;
 using Amazon.Runtime;
+using DynORM.InternalModels;
 using DynORM.Models;
 using Newtonsoft.Json;
 
@@ -17,6 +18,7 @@ namespace DynORM
         private AWSCredentials _credentials;
         private ConfigModel _configuration;
         private bool _configWasRead = false;
+        private bool _credentialsWasSetted = false;
 
 
         private ConfigReader()
@@ -44,10 +46,10 @@ namespace DynORM
             get
             {
                 if (!_configWasRead)
-                {
                     ReadConfiguration();
-                    _credentials = GetCredential(_configuration);
-                }
+
+                if (!_credentialsWasSetted)
+                    ReadCredentials();
 
                 return _credentials;
             }
@@ -57,7 +59,7 @@ namespace DynORM
         {
             get
             {
-                if(_configWasRead)
+                if(!_configWasRead)
                     ReadConfiguration();
 
                 switch (_configuration.Endpoint)
@@ -116,15 +118,26 @@ namespace DynORM
             //Set flag to true to don't read twice or more
             _configWasRead = true;
 
-            string path = Assembly.GetEntryAssembly().Location;
+            string path = Path.GetDirectoryName(this.GetType().GetTypeInfo().Assembly.Location);
             _configuration = new ConfigModel();
 
+
             //Try to get config file from current directory
-            //or parent directory. If it does not exists,
-            //it uses default values
-            var file = Path.Combine(path, "appsettings.json");
-            if (!File.Exists(file))
-                file = Path.Combine(Directory.GetParent(path).FullName, "appsettings.json");
+            //or of his parent directory. 
+            int topParentCount = 0;
+            var file = string.Empty;
+            while (topParentCount < 5 && !File.Exists(file))
+            {
+                file = Path.Combine(path, "appsettings.json");
+                var dirInfo = Directory.GetParent(path);
+                if (!dirInfo.Exists || dirInfo.Parent == null)
+                    break;
+                path = dirInfo.FullName;
+                topParentCount++;
+            }
+            
+            //If configuration file does not exists, then exit because
+            //is imposible read the confgirutated values
             if (!File.Exists(file))
                 return;
 
@@ -153,21 +166,21 @@ namespace DynORM
                 _configuration.EnviromentPrefix = configObject.DynORM.EnviromentPrefix;
         }
 
-        private AWSCredentials GetCredential(ConfigModel config)
+        private void ReadCredentials()
         {
-            if (!string.IsNullOrWhiteSpace(config.PublicKey) && !string.IsNullOrWhiteSpace(config.PrivateKey))
-                return ModelToAwsCredentials(config);
+            _credentialsWasSetted = true;
 
-            if(!string.IsNullOrWhiteSpace(config.FilePath))
-                if (File.Exists(config.FilePath))
+            if (!string.IsNullOrWhiteSpace(_configuration.PublicKey) && !string.IsNullOrWhiteSpace(_configuration.PrivateKey))
+                _credentials = ModelToAwsCredentials(_configuration);
+
+            if(!string.IsNullOrWhiteSpace(_configuration.FilePath))
+                if (File.Exists(_configuration.FilePath))
                 {
-                    var fileContent = File.ReadAllText(config.FilePath);
+                    var fileContent = File.ReadAllText(_configuration.FilePath);
                     var credential = JsonConvert.DeserializeObject<CredentialModel>(fileContent);
                     if(credential != null)
-                        return ModelToAwsCredentials(credential);
+                        _credentials = ModelToAwsCredentials(credential);
                 }
-
-            return null;
         }
 
         private AWSCredentials ModelToAwsCredentials(CredentialModel model)

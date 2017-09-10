@@ -30,12 +30,13 @@ namespace DynORM
 
             //Set the enviroment prefix
             if (!string.IsNullOrWhiteSpace(_enviromentPrefix))
-                if (!_enviromentPrefix.EndsWith("-") && !_enviromentPrefix.EndsWith("_") &&
-                    !_enviromentPrefix.EndsWith("."))
+            {
+                if (!_enviromentPrefix.EndsWith("-") && !_enviromentPrefix.EndsWith("_") && !_enviromentPrefix.EndsWith("."))
                     _enviromentPrefix += "-";
-            _enviromentPrefix = _enviromentPrefix.Trim();
+                _enviromentPrefix = _enviromentPrefix.Trim();
+            }
 
-            
+
             //Set credentials
             //If credentials is null, then use credentials from IAM ROLE
             var credentials = ConfigReader.Instance.Credentials;

@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using Amazon.DynamoDBv2.DataModel;
+using DynORM.Attributes;
+using DynORM.Models;
 
 namespace DynORM.Helpers
 {
@@ -10,6 +13,12 @@ namespace DynORM.Helpers
     {
         private static volatile MetadataHelper _instance;
         private static object _syncRoot = new Object();
+        private readonly IEnumerable<Type> _numberTypes = new List<Type>()
+        {
+            typeof(Int16), typeof(Int32), typeof(Int64),
+            typeof(UInt16), typeof(UInt32), typeof(UInt64),
+            typeof(decimal), typeof(float)
+        };
 
         private MetadataHelper()
         {
@@ -43,6 +52,14 @@ namespace DynORM.Helpers
                 return dynamoAttribute.TableName;
 
             return tableType.Name;
+        }
+
+        public bool IsNumber(Type type)
+        {
+            if (_numberTypes.Contains(type))
+                return true;
+            
+            return false;
         }
     }
 }
