@@ -8,9 +8,9 @@ namespace DynORM
 {
     public interface IRepository<TModel> where TModel: class
     {
-        Task<TModel> Create(TModel item);
-        Task<TModel> Update(TModel item);
-        Task<TModel> Delete(TModel item);
+        Task Create(TModel item);
+        Task Update(TModel item);
+        Task Delete(TModel item);
         Task<TModel> GetByPk<THashKey>(THashKey hashKey);
         Task<TModel> GetByPk<THashKey, TRangeKey>(THashKey hashKey, TRangeKey rangeKey);
         Task<IQueryable<TModel>> GetByHashKey<THashKey>(THashKey hashKey);

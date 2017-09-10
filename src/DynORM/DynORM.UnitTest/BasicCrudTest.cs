@@ -10,7 +10,7 @@ namespace DynORM.UnitTest
         [Fact]
         public void Test1()
         {
-            var repository = RepositoryFactory.Instance.GetRepository<PersonModel>();
+            var repository = RepositoryFactory.Instance.MakeNew<PersonModel>();
             var model = PersonFactory.Instance.MakePerson();
             repository.Create(model);
         }

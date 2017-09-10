@@ -28,7 +28,7 @@ namespace DynORM
             };
         }
 
-        public async Task<TModel> Create(TModel item)
+        public async Task Create(TModel item)
         {
             using (var context = new DynamoDBContext(_dynamoClient))
             {
@@ -36,7 +36,12 @@ namespace DynORM
             }
         }
 
-        public Task<TModel> Delete(TModel item)
+        public Task Delete(TModel item)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task Update(TModel item)
         {
             throw new NotImplementedException();
         }
@@ -56,9 +61,6 @@ namespace DynORM
             throw new NotImplementedException();
         }
 
-        public Task<TModel> Update(TModel item)
-        {
-            throw new NotImplementedException();
-        }
+        
     }
 }
