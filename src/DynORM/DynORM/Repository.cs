@@ -9,28 +9,21 @@ using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.Model;
 using DynORM.Helpers;
 using System.Reflection;
+using Amazon;
+using Amazon.Runtime;
 
 namespace DynORM
 {
     public class Repository<TModel> : IRepository<TModel> where TModel : class
     {
-        private readonly AmazonDynamoDBClient _dynamoClient;
-        private readonly DynamoDBOperationConfig _dynamoDbOperationConfig;
+        private readonly AWSCredentials _credentials;
+        private readonly TableRequestBuilder<TModel> _tableRequestBuilder;
         private IList<Expression<Func<TModel, bool>>> _conditions;
 
-        public Repository(string enviromentPrefix, AmazonDynamoDBClient dynamoClient)
+        internal Repository(AWSCredentials credentials, RegionEndpoint endpoint, TableRequestBuilder<TModel> tableRequestBuilder)
         {
-            _dynamoClient = dynamoClient;
-            
-            //Get the table name from attibute or class name if this attribute does not exists
-            var tableName = MetadataHelper.Instance.GetTableName<TModel>();
-
-            //Make a new DynamoOperationConfig with the new table name
-            _dynamoDbOperationConfig = new DynamoDBOperationConfig
-            {
-                OverrideTableName = $"{enviromentPrefix}{tableName}"
-            };
-
+            _tableRequestBuilder = tableRequestBuilder;
+            _credentials = credentials;
             _conditions = new List<Expression<Func<TModel, bool>>>();
         }
 
@@ -42,20 +35,15 @@ namespace DynORM
 
         public Task Create(TModel item)
         {
-            foreach (Expression<Func<TModel, bool>> c in _conditions)
+            foreach (Expression<Func<TModel, bool>> condition in _conditions)
             {
-                var body = c.Body as BinaryExpression;
-                var left = body.Left;
-                var right = body.Right;
-                var operationType = body.NodeType;
-
-
+                var filter = _tableRequestBuilder.BuildExpression(condition);
             }
 
             
-            using (var context = new DynamoDBContext(_dynamoClient))
+            using (var context = new DynamoDBContext(GetDynamoDbClient()))
             {
-                return context.SaveAsync(item, _dynamoDbOperationConfig);
+                return context.SaveAsync(item);
             }
         }
 
@@ -64,12 +52,9 @@ namespace DynORM
             throw new NotImplementedException();
         }
 
-        public async Task Update(TModel item)
+        public Task Update(TModel item)
         {
-            using (var context = new DynamoDBContext(_dynamoClient))
-            {
-                await context.SaveAsync(item, _dynamoDbOperationConfig);
-            }
+            throw new NotImplementedException();
         }
 
         public Task<IQueryable<TModel>> GetByHashKey<THashKey>(THashKey hashKey)
@@ -87,6 +72,17 @@ namespace DynORM
             throw new NotImplementedException();
         }
 
+        private AmazonDynamoDBClient GetDynamoDbClient()
+        {
+            if (_credentials == null)
+            {
+                var config = new AmazonDynamoDBConfig();
+                config.RegionEndpoint = ConfigReader.Instance.Endpoint;
+                return new AmazonDynamoDBClient(config);
+            }
+            
+            return new AmazonDynamoDBClient(_credentials, ConfigReader.Instance.Endpoint);
+        }
         
     }
 }

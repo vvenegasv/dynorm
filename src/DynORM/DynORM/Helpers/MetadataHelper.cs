@@ -41,17 +41,26 @@ namespace DynORM.Helpers
             }
         }
 
-        public string GetTableName<TModel>() where TModel : class
+        public bool TryCastTo<TOuput>(object input, out TOuput output) where TOuput: class
         {
-            var tableType = typeof(TModel).GetTypeInfo();
-            if(tableType == null)
-                throw new NullReferenceException("The TModel reference for dynamo table does not exists");
+            output = default(TOuput);
 
-            var dynamoAttribute = (DynamoDBTableAttribute)tableType.GetCustomAttribute(typeof(DynamoDBTableAttribute));
-            if (dynamoAttribute != null)
-                return dynamoAttribute.TableName;
+            if (input is TOuput)
+            {
+                output = (TOuput)input;
+                return true;
+            }
+            
 
-            return tableType.Name;
+            try
+            {
+                output = (TOuput)Convert.ChangeType(input, typeof(TOuput));
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public bool IsNumber(Type type)

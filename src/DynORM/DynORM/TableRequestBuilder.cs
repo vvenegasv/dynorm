@@ -24,25 +24,38 @@ namespace DynORM
             _tableName = GetTableName(enviromentPrefix);
         }
 
+        public string BuildExpression(Expression<Func<TModel, bool>> expression)
+        {
+            //TODO: Add expression.Body is MethodCallExpression support
+            var body = expression.Body as BinaryExpression;
+            return BuildBinaryExpression(body);
+        }
+
+        public string BuildBinaryExpression(BinaryExpression body)
+        {
+            var left = body.Left;
+            var right = body.Right;
+            var operationType = body.NodeType;
+
+            return GetValue(left) + " " +
+                   GetLogicalOperator(operationType) + " " +
+                   GetValue(right);
+        }
+
         public string GetLogicalOperator(ExpressionType expressionType)
         {
             switch (expressionType)
             {
                 case ExpressionType.And:
                     return "AND";
+                case ExpressionType.AndAlso:
+                    return "AND";
                 case ExpressionType.Or:
                     return "OR";
                 case ExpressionType.Not:
                     return "NOT";
-                default:
-                    throw new NotSupportedException($"The expression type '{expressionType}' is not supported");
-            }
-        }
 
-        public string GetComparisonOperator(ExpressionType expressionType)
-        {
-            switch (expressionType)
-            {
+
                 case ExpressionType.Equal:
                     return "=";
                 case ExpressionType.NotEqual:
@@ -55,10 +68,29 @@ namespace DynORM
                     return "<=";
                 case ExpressionType.GreaterThanOrEqual:
                     return ">=";
+
+
                 default:
                     throw new NotSupportedException($"The expression type '{expressionType}' is not supported");
             }
         }
+        
+        public string GetValue(Expression expression)
+        {
+            BinaryExpression binaryExpression;
+            if (MetadataHelper.Instance.TryCastTo(expression, out binaryExpression))
+                return BuildBinaryExpression(binaryExpression);
+            
+            if (expression.NodeType == ExpressionType.MemberAccess)
+                return ((MemberExpression)expression).Member.Name;
+
+            if (expression.NodeType == ExpressionType.Constant)
+                return (string)(expression as ConstantExpression).Value;
+
+            return string.Empty;
+        }
+
+        
 
         private Dictionary<string, KeyInfo> GetKeyInfos()
         {
