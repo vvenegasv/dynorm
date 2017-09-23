@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -16,7 +17,9 @@ namespace DynORM
     {
         private readonly Dictionary<string, KeyInfo> _keyInfos;
         private readonly string _tableName;
-        
+        private readonly PropertyHelper _propHelper = PropertyHelper.Instance;
+
+
 
         public TableRequestBuilder(string enviromentPrefix)
         {
@@ -24,11 +27,23 @@ namespace DynORM
             _tableName = GetTableName(enviromentPrefix);
         }
 
+        /// <summary>
+        /// Convert a expression to a valid DynamoDB query string
+        /// </summary>
+        /// <param name="expression">Expression to build</param>
+        /// <exception cref="ArgumentNullException">if expression parameter is null</exception>
+        /// <exception cref="ArgumentException">if expression.Body is not supported</exception>
+        /// <returns>String with DynamoDB query string</returns>
         public string BuildExpression(Expression<Func<TModel, bool>> expression)
-        {
-            //TODO: Add expression.Body is MethodCallExpression support
-            var body = expression.Body as BinaryExpression;
-            return BuildBinaryExpression(body);
+        {   
+            if(expression?.Body is BinaryExpression)
+                return BuildBinaryExpression((BinaryExpression)expression.Body);
+            else if (expression?.Body is MethodCallExpression)
+                return BuildMethodCallExpression(expression);
+            else if (expression == null || expression.Body == null)
+                throw new ArgumentNullException(nameof(expression), "The expression cannot be null");
+            else
+                throw new ArgumentException($"The expression '{expression?.Body}' is unsupported");
         }
 
         public string BuildBinaryExpression(BinaryExpression body)
@@ -40,6 +55,32 @@ namespace DynORM
             return GetValue(left) + " " +
                    GetLogicalOperator(operationType) + " " +
                    GetValue(right);
+        }
+
+        public string BuildMethodCallExpression(Expression<Func<TModel, bool>> expression)
+        {
+             var body = expression.Body as MethodCallExpression;
+
+            if (body?.Method == null)
+                throw new ArgumentNullException(nameof(body), "The MethodCallExpression cannot be null");
+            else if (!typeof(IEnumerable).IsAssignableFrom(body.Method.DeclaringType))
+                throw new ArgumentException($"Expression '{body}' is unsupported");
+            else if (body.Method.Name != "Contains")
+                throw new ArgumentException($"Expression '{body}' is unsupported");
+            
+            var argument = body.Arguments.FirstOrDefault() as MemberExpression;
+
+            if(argument == null)
+                throw new InvalidCastException($"The expression '{body.Arguments}' is not assignable for MemberExpression");
+
+            var compiled = expression.Compile();
+
+            var constants = (compiled.Target as System.Runtime.CompilerServices.Closure).Constants;
+
+            var countMethod = body.Method.DeclaringType.GetMethod("Count");
+            
+
+            return $"{_propHelper.GetColumnName(argument.Member)} in ";
         }
 
         public string GetLogicalOperator(ExpressionType expressionType)
