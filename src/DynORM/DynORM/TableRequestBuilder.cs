@@ -40,7 +40,7 @@ namespace DynORM
                 return BuildBinaryExpression((BinaryExpression)expression.Body);
             else if (expression?.Body is MethodCallExpression)
                 return BuildMethodCallExpression(expression);
-            else if (expression == null || expression.Body == null)
+            else if (expression?.Body == null)
                 throw new ArgumentNullException(nameof(expression), "The expression cannot be null");
             else
                 throw new ArgumentException($"The expression '{expression?.Body}' is unsupported");
@@ -75,9 +75,11 @@ namespace DynORM
 
             var compiled = expression.Compile();
 
-            var constants = (compiled.Target as System.Runtime.CompilerServices.Closure).Constants;
+            var target = compiled.Target;
+            
+            //var constants = (compiled.Target as System.Runtime.CompilerServices.Closure).Constants;
 
-            var countMethod = body.Method.DeclaringType.GetMethod("Count");
+            //var countMethod = body.Method.DeclaringType.GetMethod("Count");
             
 
             return $"{_propHelper.GetColumnName(argument.Member)} in ";
