@@ -232,6 +232,6 @@ namespace DynORM.Filters
         /// Create the query 
         /// </summary>
         /// <returns>string that represent filters given</returns>
-        string Build();
+        ICompiledFilter Build();
     }
 }

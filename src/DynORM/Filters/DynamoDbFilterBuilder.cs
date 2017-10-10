@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using DynORM.Helpers;
+using System.Collections.ObjectModel;
 
 namespace DynORM.Filters
 {
-    public class DynamoDbFilterBuilder<TModel> : IFilterBuilder<TModel> where TModel : class
+    public class DynamoDbFilterBuilder<TModel> : ICompiledFilter, IFilterBuilder<TModel> where TModel : class
     {
         private readonly IList<string> _filters;
         private readonly IDictionary<string, string> _namesTokens;
@@ -81,11 +82,29 @@ namespace DynORM.Filters
             if (memberExpression == null)
                 throw new ExpressionNotSupportedException($"Expression {property} is unsupported");
 
+            string filter = string.Empty;
             if (_filters.Any())
-                _filters.Add($"{GetConcatenationValue(concatenationType)} {_propertyHelper.GetColumnName(memberExpression)} in ({string.Join(", ", values)})");
-            else
-                _filters.Add($"{_propertyHelper.GetColumnName(memberExpression)} in ({string.Join(", ", values)})");
+                filter = GetConcatenationValue(concatenationType);
+            var columnName = _propertyHelper.GetColumnName(memberExpression);
+            var columnAlias = "#" + columnName;
+            if (!_namesTokens.ContainsKey(columnAlias))
+                _namesTokens.Add(columnAlias, columnName);
+
+            var parameters = new List<string>();
+            filter += $" {columnAlias} in (";
             
+            foreach (var val in values)
+            {
+                var index = _valuesTokens.Count + 1;
+                var param = ":p" + index;
+                parameters.Add(param);
+                _valuesTokens.Add(param, new KeyValuePair<object, Type>(val, val.GetType()));
+            }
+
+            filter += string.Join(", ", parameters);
+            filter += ")";
+            _filters.Add(filter.Trim());
+
             return this;
         }
 
@@ -100,11 +119,14 @@ namespace DynORM.Filters
             if (memberExpression == null)
                 throw new ExpressionNotSupportedException($"Expression {property} is unsupported");
 
+            var name = _propertyHelper.GetColumnName(memberExpression);
+            var key = "#" + name;
+            _namesTokens.Add(key, name);
 
             if (_filters.Any())
-                _filters.Add($"{GetConcatenationValue(concatenationType)} attribute_exists ({_propertyHelper.GetColumnName(memberExpression)})");
+                _filters.Add($"{GetConcatenationValue(concatenationType)} attribute_exists ({key})");
             else
-                _filters.Add($"attribute_exists ({_propertyHelper.GetColumnName(memberExpression)})");
+                _filters.Add($"attribute_exists ({key})");
 
             return this;
         }
@@ -186,9 +208,26 @@ namespace DynORM.Filters
             throw new NotImplementedException();
         }
 
-        public string Build()
+        public ICompiledFilter Build()
         {
-            return string.Join(" ", _filters);
+            return this;
+        }
+
+
+
+        public string GetQuery()
+        {
+            return string.Join(" ", this._filters);
+        }
+
+        public IReadOnlyDictionary<string, string> GetNames()
+        {
+            return new ReadOnlyDictionary<string, string>(this._namesTokens);
+        }
+
+        public IReadOnlyDictionary<string, KeyValuePair<object, Type>> GetValues()
+        {
+            return new ReadOnlyDictionary<string, KeyValuePair<object, Type>>(this._valuesTokens);
         }
 
 
@@ -268,7 +307,7 @@ namespace DynORM.Filters
         {
             return concatenationType == FilterConcatenationType.And ? "AND" : "OR";
         }
-        
+
         
     }
 }
