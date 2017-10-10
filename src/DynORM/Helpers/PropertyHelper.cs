@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using Amazon.DynamoDBv2.DataModel;
+using System.Linq.Expressions;
+using DynORM.Filters;
 
 namespace DynORM.Helpers
 {
@@ -37,6 +39,15 @@ namespace DynORM.Helpers
         {
             var property = member.GetCustomAttribute<DynamoDBPropertyAttribute>();
             return property?.AttributeName ?? member.Name;
+        }
+
+        public string GetColumnName(MemberExpression property)
+        {
+            if(property?.NodeType != ExpressionType.MemberAccess)
+                throw new ExpressionNotSupportedException($"Expression {property} is unsupported");
+
+            var memberInfo = property.Member;
+            return GetColumnName(memberInfo);
         }
     }
 }

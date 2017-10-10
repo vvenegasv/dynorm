@@ -11,6 +11,7 @@ namespace DynORM.Filters
         /// True if the input expression returns true
         /// </summary>
         /// <param name="expression">Expression to evaluate. It only support basic comparison like a=b. Functions with contains and other stuff is not supported</param>
+        /// <exception cref="ExpressionNotSupportedException">If expression is not supported</exception>
         /// <returns>Updated filter builder</returns>
         IFilterBuilder<TModel> Where(Expression<Func<TModel, bool>> expression);
 
@@ -19,6 +20,7 @@ namespace DynORM.Filters
         /// </summary>
         /// <param name="expression">Expression to evaluate. It only support basic comparison like a=b. Functions with contains and other stuff is not supported</param>
         /// <param name="concatenationType">Concatenation type (And/Or)</param>
+        /// <exception cref="ExpressionNotSupportedException">If expression is not supported</exception>
         /// <returns>Updated filter builder</returns>
         IFilterBuilder<TModel> Where(Expression<Func<TModel, bool>> expression, FilterConcatenationType concatenationType);
 
@@ -26,6 +28,8 @@ namespace DynORM.Filters
         /// True if the input expression returns true
         /// </summary>
         /// <param name="filter">FilterBuilder instance</param>
+        /// <exception cref="ExpressionNotSupportedException">If expression is not supported</exception>
+        /// <exception cref="ArgumentNullException">If IFilterBuilder is null</exception>
         /// <returns>Updated filter builder</returns>
         IFilterBuilder<TModel> Where(IFilterBuilder<TModel> filter);
 
@@ -34,6 +38,8 @@ namespace DynORM.Filters
         /// </summary>
         /// <param name="filter">FilterBuilder instance</param>
         /// <param name="concatenationType">Concatenation type (And/Or)</param>
+        /// <exception cref="ExpressionNotSupportedException">If expression is not supported</exception>
+        /// <exception cref="ArgumentNullException">If IFilterBuilder is null</exception>
         /// <returns>Updated filter builder</returns>
         IFilterBuilder<TModel> Where(IFilterBuilder<TModel> filter, FilterConcatenationType concatenationType);
 
@@ -45,6 +51,7 @@ namespace DynORM.Filters
         /// <typeparam name="TValue">Attribute specified type</typeparam>
         /// <param name="property">Attribute</param>
         /// <param name="values">Value list</param>
+        /// <exception cref="ExpressionNotSupportedException">If expression is not supported</exception>
         /// <returns>Updated filter builder</returns>
         IFilterBuilder<TModel> WhereIn<TValue>(Expression<Func<TModel, TValue>> property, IEnumerable<TValue> values) where TValue : class;
 
@@ -55,6 +62,7 @@ namespace DynORM.Filters
         /// <param name="property">Attribute</param>
         /// <param name="values">Value list</param>
         /// <param name="concatenationType">Concatenation type (And/Or)</param>
+        /// <exception cref="ExpressionNotSupportedException">If expression is not supported</exception>
         /// <returns>Updated filter builder</returns>
         IFilterBuilder<TModel> WhereIn<TValue>(Expression<Func<TModel, TValue>> property, IEnumerable<TValue> values, FilterConcatenationType concatenationType) where TValue : class;
 

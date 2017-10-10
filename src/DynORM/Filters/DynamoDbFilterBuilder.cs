@@ -9,11 +9,17 @@ namespace DynORM.Filters
     public class DynamoDbFilterBuilder<TModel> : IFilterBuilder<TModel> where TModel : class
     {
         private readonly IList<string> _filters;
+        private readonly IDictionary<string, string> _namesTokens;
+        private readonly IDictionary<string, KeyValuePair<object, Type>> _valuesTokens;
+        private readonly PropertyHelper _propertyHelper;
 
 
         public DynamoDbFilterBuilder() : base()
         {
+            _propertyHelper = PropertyHelper.Instance;
             _filters = new List<string>();
+            _namesTokens = new Dictionary<string, string>();
+            _valuesTokens = new Dictionary<string, KeyValuePair<object, Type>>();
         }
 
         public DynamoDbFilterBuilder(string filter)
@@ -31,7 +37,7 @@ namespace DynORM.Filters
         public IFilterBuilder<TModel> Where(Expression<Func<TModel, bool>> expression, FilterConcatenationType concatenationType)
         {
             if (expression?.Body is BinaryExpression)
-            {
+            {                
                 if (_filters.Any())
                     _filters.Add($"{GetConcatenationValue(concatenationType)} {BuildBinaryExpression((BinaryExpression)expression.Body)}");
                 else
@@ -54,9 +60,9 @@ namespace DynORM.Filters
                 throw new ArgumentNullException(nameof(filter), $"{nameof(filter)} cannot be null");
 
             if (_filters.Any())
-                _filters.Add($"{GetConcatenationValue(concatenationType)} {filter.Build()}");
+                _filters.Add($"{GetConcatenationValue(concatenationType)} ({filter.Build()})");
             else
-                _filters.Add(filter.Build());
+                _filters.Add($"({filter.Build()})");
 
             return this;
         }
@@ -68,33 +74,54 @@ namespace DynORM.Filters
 
         public IFilterBuilder<TModel> WhereIn<TValue>(Expression<Func<TModel, TValue>> property, IEnumerable<TValue> values, FilterConcatenationType concatenationType) where TValue : class
         {
-            if (property?.NodeType != ExpressionType.MemberAccess)
+            if (property?.NodeType != ExpressionType.Lambda)
+                throw new ExpressionNotSupportedException($"Expression {property} is unsupported");
+                        
+            var memberExpression = property.Body as MemberExpression;
+            if (memberExpression == null)
                 throw new ExpressionNotSupportedException($"Expression {property} is unsupported");
 
-            Expression a = property;
-            MemberExpression b = (MemberExpression)((Expression)property);
-            var c = b.Member.Name;
+            if (_filters.Any())
+                _filters.Add($"{GetConcatenationValue(concatenationType)} {_propertyHelper.GetColumnName(memberExpression)} in ({string.Join(", ", values)})");
+            else
+                _filters.Add($"{_propertyHelper.GetColumnName(memberExpression)} in ({string.Join(", ", values)})");
+            
             return this;
         }
 
         public IFilterBuilder<TModel> WhereAttributeExists<TValue>(Expression<Func<TModel, TValue>> property) where TValue : class
         {
-            throw new NotImplementedException();
+            return WhereAttributeExists(property, FilterConcatenationType.And);
         }
 
         public IFilterBuilder<TModel> WhereAttributeExists<TValue>(Expression<Func<TModel, TValue>> property, FilterConcatenationType concatenationType) where TValue : class
         {
-            throw new NotImplementedException();
+            var memberExpression = property.Body as MemberExpression;
+            if (memberExpression == null)
+                throw new ExpressionNotSupportedException($"Expression {property} is unsupported");
+
+
+            if (_filters.Any())
+                _filters.Add($"{GetConcatenationValue(concatenationType)} attribute_exists ({_propertyHelper.GetColumnName(memberExpression)})");
+            else
+                _filters.Add($"attribute_exists ({_propertyHelper.GetColumnName(memberExpression)})");
+
+            return this;
         }
 
         public IFilterBuilder<TModel> WhereAttributeExists(string property)
         {
-            throw new NotImplementedException();
+            return WhereAttributeExists(property, FilterConcatenationType.And);
         }
 
         public IFilterBuilder<TModel> WhereAttributeExists(string property, FilterConcatenationType concatenationType)
         {
-            throw new NotImplementedException();
+            if (_filters.Any())
+                _filters.Add($"{GetConcatenationValue(concatenationType)} attribute_exists ({property})");
+            else
+                _filters.Add($"attribute_exists ({property})");
+
+            return this;
         }
 
         public IFilterBuilder<TModel> WhereAttributeNotExists<TValue>(Expression<Func<TModel, TValue>> property) where TValue : class
@@ -171,10 +198,10 @@ namespace DynORM.Filters
             var left = body.Left;
             var right = body.Right;
             var operationType = body.NodeType;
-
-            return GetValue(left) + " " +
+            
+            return GetBinayExpressionValue(left) + " " +
                    GetLogicalOperator(operationType) + " " +
-                   GetValue(right);
+                   GetBinayExpressionValue(right);
         }
 
         private string GetLogicalOperator(ExpressionType expressionType)
@@ -210,17 +237,29 @@ namespace DynORM.Filters
             }
         }
 
-        private string GetValue(Expression expression)
+        private string GetBinayExpressionValue(Expression expression)
         {
             BinaryExpression binaryExpression;
             if (MetadataHelper.Instance.TryCastTo(expression, out binaryExpression))
                 return BuildBinaryExpression(binaryExpression);
 
             if (expression.NodeType == ExpressionType.MemberAccess)
-                return ((MemberExpression)expression).Member.Name;
+            {
+                var columnName = _propertyHelper.GetColumnName((MemberExpression)expression);
+                var columnAlias = $"#{columnName}";
+                if (!_namesTokens.ContainsKey(columnAlias))
+                    _namesTokens.Add(columnAlias, columnName);
+                return columnAlias;
+            }
 
             if (expression.NodeType == ExpressionType.Constant)
-                return (string)(expression as ConstantExpression).Value;
+            {
+                var value = (string)(expression as ConstantExpression).Value;
+                var index = _valuesTokens.Count + 1;
+                var token = $":p{index}";
+                _valuesTokens.Add(token, new KeyValuePair<object, Type>(value, typeof(string)));
+                return token;
+            }
 
             return string.Empty;
         }
@@ -229,7 +268,7 @@ namespace DynORM.Filters
         {
             return concatenationType == FilterConcatenationType.And ? "AND" : "OR";
         }
-
+        
         
     }
 }
