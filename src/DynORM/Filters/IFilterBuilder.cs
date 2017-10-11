@@ -142,7 +142,7 @@ namespace DynORM.Filters
         /// <typeparam name="TValue">Attribute specified type</typeparam>
         /// <param name="property">Attribute specified value</param>
         /// <returns>Updated filter builder</returns>
-        IFilterBuilder<TModel> WhereBeginsWith<TValue>(Expression<Func<TModel, TValue>> property) where TValue : class;
+        IFilterBuilder<TModel> WhereBeginsWith<TValue>(Expression<Func<TModel, TValue>> property, string substring) where TValue : class;
 
         /// <summary>
         /// True if the attribute specified begins with a particular substring
@@ -151,7 +151,7 @@ namespace DynORM.Filters
         /// <param name="property">Attribute specified value</param>
         /// <param name="concatenationType">Concatenation type (And/Or)</param>
         /// <returns>Updated filter builder</returns>
-        IFilterBuilder<TModel> WhereBeginsWith<TValue>(Expression<Func<TModel, TValue>> property, FilterConcatenationType concatenationType) where TValue : class;
+        IFilterBuilder<TModel> WhereBeginsWith<TValue>(Expression<Func<TModel, TValue>> property, string substring, FilterConcatenationType concatenationType) where TValue : class;
 
 
 

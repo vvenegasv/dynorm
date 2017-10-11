@@ -87,7 +87,22 @@ namespace DynORM.UnitTest
                 .Build();
 
             var query = compiledFilter.GetQuery();
+            var names = compiledFilter.GetNames();
+            var values = compiledFilter.GetValues();
+
             Assert.Equal("(#Email = :p1 AND #Name = :p2 OR #Phone = :p3)", query);
+            Assert.Equal(names?.ContainsKey("#Email"), true);
+            Assert.Equal(names?.ContainsKey("#Name"), true);
+            Assert.Equal(names?.ContainsKey("#Phone"), true);
+            Assert.Equal(names?["#Phone"], "Phone");
+            Assert.Equal(names?["#Name"], "Name");
+            Assert.Equal(names?["#Email"], "Email");
+            Assert.Equal(values?.ContainsKey(":p1"), true);
+            Assert.Equal(values?.ContainsKey(":p2"), true);
+            Assert.Equal(values?.ContainsKey(":p3"), true);
+            Assert.Equal(values?[":p1"].Key, "n1");
+            Assert.Equal(values?[":p2"].Key, "n2");
+            Assert.Equal(values?[":p3"].Key, "123");
         }
 
         [Fact]
@@ -104,7 +119,11 @@ namespace DynORM.UnitTest
 
             Assert.Equal("#Email in (:p1, :p2, :p3)", query);
             Assert.Equal(values?.ContainsKey(":p1"), true);
+            Assert.Equal(values?.ContainsKey(":p2"), true);
+            Assert.Equal(values?.ContainsKey(":p3"), true);
             Assert.Equal(values?[":p1"].Key, "n1");
+            Assert.Equal(values?[":p2"].Key, "n2");
+            Assert.Equal(values?[":p3"].Key, "n3");
             Assert.Equal(names?.ContainsKey("#Email"), true);
             Assert.Equal(names?["#Email"], "Email");
         }
@@ -136,7 +155,70 @@ namespace DynORM.UnitTest
                 .Build();
 
             var query = compiledFilter.GetQuery();
+            var names = compiledFilter.GetNames();
+            var values = compiledFilter.GetValues();
+
             Assert.Equal("attribute_exists (#Correo)", query);
+            Assert.Equal(values.Count, 0);
+            Assert.Equal(names?.ContainsKey("#Correo"), true);
+            Assert.Equal(names?["#Correo"], "Correo");
+        }
+
+        [Fact]
+        public void AttributeNotExists()
+        {
+            IFilterBuilder<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            var compiledFilter = builder
+                .WhereAttributeNotExists(x => x.Email)
+                .Build();
+
+            var query = compiledFilter.GetQuery();
+            var values = compiledFilter.GetValues();
+            var names = compiledFilter.GetNames();
+
+            Assert.Equal("attribute_not_exists (#Email)", query);
+            Assert.Equal(values.Count, 0);
+            Assert.Equal(names?.ContainsKey("#Email"), true);
+            Assert.Equal(names?["#Email"], "Email");
+        }
+
+        [Fact]
+        public void AttributeNotExistsAsString()
+        {
+            IFilterBuilder<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            var compiledFilter = builder
+                .WhereAttributeNotExists("Correo")
+                .Build();
+
+            var query = compiledFilter.GetQuery();
+            var values = compiledFilter.GetValues();
+            var names = compiledFilter.GetNames();
+
+            Assert.Equal("attribute_not_exists (#Correo)", query);
+            Assert.Equal(values.Count, 0);
+            Assert.Equal(names?.ContainsKey("#Correo"), true);
+            Assert.Equal(names?["#Correo"], "Correo");
+        }
+
+        [Fact]
+        public void BeginsWith()
+        {
+            IFilterBuilder<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            var compiledFilter = builder
+                .WhereBeginsWith(x => x.Email, "n1")
+                .Build();
+
+            var query = compiledFilter.GetQuery();
+            var values = compiledFilter.GetValues();
+            var names = compiledFilter.GetNames();
+
+            Assert.Equal("begins_with (#Email, :p1)", query);
+            Assert.Equal(values?.Count, 1);
+            Assert.Equal(names?.Count, 1);
+            Assert.Equal(names?.ContainsKey("#Email"), true);
+            Assert.Equal(names?["#Email"], "Email");
+            Assert.Equal(values?.ContainsKey(":p1"), true);
+            Assert.Equal(values?[":p1"].Key, "n1");
         }
 
         [Fact]

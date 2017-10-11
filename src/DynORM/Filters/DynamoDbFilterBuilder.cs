@@ -60,10 +60,32 @@ namespace DynORM.Filters
             if(filter == null)
                 throw new ArgumentNullException(nameof(filter), $"{nameof(filter)} cannot be null");
 
+            var filterBuilded = filter.Build();
+            var names = filterBuilded.GetNames();
+            var values = filterBuilded.GetValues();
+            var query = filterBuilded.GetQuery();
+
+            foreach (var name in names)
+                if (!_namesTokens.ContainsKey(name.Key))
+                    _namesTokens.Add(name.Key, name.Value);
+            
+            for(int index = 1; index<=values.Count; index++)
+            {
+                var originalKey = ":p" + index;
+                var valuesCount = _valuesTokens.Count + 1;
+                var tempKey = ":t" + valuesCount;
+                var newKey = ":p" + valuesCount;
+                var value = values[originalKey];
+                _valuesTokens.Add(newKey, value);
+                query = query.Replace(originalKey, tempKey);                
+            }
+
+            query = query.Replace(":t", ":p");
+            
             if (_filters.Any())
-                _filters.Add($"{GetConcatenationValue(concatenationType)} ({filter.Build()})");
+                _filters.Add($"{GetConcatenationValue(concatenationType)} ({query})");
             else
-                _filters.Add($"({filter.Build()})");
+                _filters.Add($"({query})");
 
             return this;
         }
@@ -121,7 +143,8 @@ namespace DynORM.Filters
 
             var name = _propertyHelper.GetColumnName(memberExpression);
             var key = "#" + name;
-            _namesTokens.Add(key, name);
+            if (!_namesTokens.ContainsKey(key))
+                _namesTokens.Add(key, name);
 
             if (_filters.Any())
                 _filters.Add($"{GetConcatenationValue(concatenationType)} attribute_exists ({key})");
@@ -138,42 +161,87 @@ namespace DynORM.Filters
 
         public IFilterBuilder<TModel> WhereAttributeExists(string property, FilterConcatenationType concatenationType)
         {
+            var key = "#" + property;
+            if(!_namesTokens.ContainsKey(key))
+                _namesTokens.Add(key, property);
+
             if (_filters.Any())
-                _filters.Add($"{GetConcatenationValue(concatenationType)} attribute_exists ({property})");
+                _filters.Add($"{GetConcatenationValue(concatenationType)} attribute_exists ({key})");
             else
-                _filters.Add($"attribute_exists ({property})");
+                _filters.Add($"attribute_exists ({key})");
 
             return this;
         }
 
         public IFilterBuilder<TModel> WhereAttributeNotExists<TValue>(Expression<Func<TModel, TValue>> property) where TValue : class
         {
-            throw new NotImplementedException();
+            return WhereAttributeNotExists(property, FilterConcatenationType.And);
         }
 
         public IFilterBuilder<TModel> WhereAttributeNotExists<TValue>(Expression<Func<TModel, TValue>> property, FilterConcatenationType concatenationType) where TValue : class
         {
-            throw new NotImplementedException();
+            var memberExpression = property.Body as MemberExpression;
+            if (memberExpression == null)
+                throw new ExpressionNotSupportedException($"Expression {property} is unsupported");
+
+            var name = _propertyHelper.GetColumnName(memberExpression);
+            var key = "#" + name;
+            if (!_namesTokens.ContainsKey(key))
+                _namesTokens.Add(key, name);
+
+            if (_filters.Any())
+                _filters.Add($"{GetConcatenationValue(concatenationType)} attribute_not_exists ({key})");
+            else
+                _filters.Add($"attribute_not_exists ({key})");
+
+            return this;
         }
 
         public IFilterBuilder<TModel> WhereAttributeNotExists(string property)
         {
-            throw new NotImplementedException();
+            return WhereAttributeNotExists(property, FilterConcatenationType.And);
         }
 
         public IFilterBuilder<TModel> WhereAttributeNotExists(string property, FilterConcatenationType concatenationType)
         {
-            throw new NotImplementedException();
+            var key = "#" + property;
+            if (!_namesTokens.ContainsKey(key))
+                _namesTokens.Add(key, property);
+
+            if (_filters.Any())
+                _filters.Add($"{GetConcatenationValue(concatenationType)} attribute_not_exists ({key})");
+            else
+                _filters.Add($"attribute_not_exists ({key})");
+
+            return this;
         }
 
-        public IFilterBuilder<TModel> WhereBeginsWith<TValue>(Expression<Func<TModel, TValue>> property) where TValue : class
+        public IFilterBuilder<TModel> WhereBeginsWith<TValue>(Expression<Func<TModel, TValue>> property, string substring) where TValue : class
         {
-            throw new NotImplementedException();
+            return WhereBeginsWith(property, substring, FilterConcatenationType.And);
         }
 
-        public IFilterBuilder<TModel> WhereBeginsWith<TValue>(Expression<Func<TModel, TValue>> property, FilterConcatenationType concatenationType) where TValue : class
+        public IFilterBuilder<TModel> WhereBeginsWith<TValue>(Expression<Func<TModel, TValue>> property, string substring, FilterConcatenationType concatenationType) where TValue : class
         {
-            throw new NotImplementedException();
+            var memberExpression = property.Body as MemberExpression;
+            if (memberExpression == null)
+                throw new ExpressionNotSupportedException($"Expression {property} is unsupported");
+
+            var name = _propertyHelper.GetColumnName(memberExpression);
+            var key = "#" + name;
+            if (!_namesTokens.ContainsKey(key))
+                _namesTokens.Add(key, name);
+
+            var index = _valuesTokens.Count + 1;
+            var parameter = ":p" + index;
+            _valuesTokens.Add(parameter, new KeyValuePair<object, Type>(substring, substring.GetType()));
+
+            if (_filters.Any())
+                _filters.Add($"{GetConcatenationValue(concatenationType)} begins_with ({key}, {parameter})");
+            else
+                _filters.Add($"begins_with ({key}, {parameter})");
+
+            return this;
         }
 
         public IFilterBuilder<TModel> WhereContains<TValue>(Expression<Func<TModel, TValue>> property, string target) where TValue : class
