@@ -11,43 +11,55 @@ using DynORM.Helpers;
 using System.Reflection;
 using Amazon;
 using Amazon.Runtime;
+using DynORM.Filters;
 
 namespace DynORM
 {
     public class Repository<TModel> : IRepository<TModel> where TModel : class
     {
-        private readonly AWSCredentials _credentials;
-        private readonly TableRequestBuilder<TModel> _tableRequestBuilder;
-        private IList<Expression<Func<TModel, bool>>> _conditions;
+        private readonly AWSCredentials _credentials;        
 
-        internal Repository(AWSCredentials credentials, RegionEndpoint endpoint, TableRequestBuilder<TModel> tableRequestBuilder)
+        internal Repository(AWSCredentials credentials, RegionEndpoint endpoint)
         {
-            _tableRequestBuilder = tableRequestBuilder;
             _credentials = credentials;
-            _conditions = new List<Expression<Func<TModel, bool>>>();
-        }
-
-        public Repository<TModel> AddConditiion(Expression<Func<TModel, bool>> predicate)
-        {
-            _conditions.Add(predicate);
-            return this;
         }
 
         public Task Create(TModel item)
         {
-            foreach (Expression<Func<TModel, bool>> condition in _conditions)
-            {
-                var filter = _tableRequestBuilder.BuildExpression(condition);
-            }
+            throw new NotImplementedException();
+        }
 
-            
-            using (var context = new DynamoDBContext(GetDynamoDbClient()))
-            {
-                return context.SaveAsync(item);
-            }
+        public Task Create(TModel item, IFilterBuilder<TModel> condition)
+        {
+            throw new NotImplementedException();
         }
 
         public Task Delete(TModel item)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task Delete(TModel item, IFilterBuilder<TModel> condition)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task Delete(IFilterBuilder<TModel> condition)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<TModel> GetOne<THashKey>(THashKey hashKey)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<TModel> GetOne<THashKey, TRangeKey>(THashKey hashKey, TRangeKey rangeKey)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<IEnumerable<TModel>> QueryByIndex<TIndex>(IFilterBuilder<TIndex> filter) where TIndex : class
         {
             throw new NotImplementedException();
         }
@@ -57,17 +69,12 @@ namespace DynORM
             throw new NotImplementedException();
         }
 
-        public Task<IQueryable<TModel>> GetByHashKey<THashKey>(THashKey hashKey)
+        public Task Update(TModel item, IFilterBuilder<TModel> condition)
         {
             throw new NotImplementedException();
         }
 
-        public Task<TModel> GetByPk<THashKey>(THashKey hashKey)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<TModel> GetByPk<THashKey, TRangeKey>(THashKey hashKey, TRangeKey rangeKey)
+        public Task Update(dynamic item, IFilterBuilder<TModel> condition)
         {
             throw new NotImplementedException();
         }

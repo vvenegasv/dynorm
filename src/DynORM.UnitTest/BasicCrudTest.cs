@@ -13,11 +13,8 @@ namespace DynORM.UnitTest
         {
             var repository = RepositoryFactory.Instance.MakeNew<PersonModel>();
             var model = PersonFactory.Instance.MakePerson();
-            
-            var t = repository.AddConditiion(x => x.Name == "hola" && x.Email != "@").Create(model);
-            Task.WaitAll(t);
 
-            Assert.Equal(false, t.IsFaulted);
+            repository.Update(new { Email = "" }, null);            
         }
     }
 }

@@ -18,7 +18,6 @@ namespace DynORM
     {
         private static volatile RepositoryFactory _instance;
         private static object _syncRoot = new Object();
-        private readonly IDictionary<string, object> _tableRequestDictionary;
         private readonly ConfigReader _configReader;
 
         /// <summary>
@@ -28,7 +27,6 @@ namespace DynORM
         /// </summary>
         private RepositoryFactory()
         {
-            _tableRequestDictionary = new Dictionary<string, object>();
             _configReader = ConfigReader.Instance;
         }
 
@@ -58,8 +56,7 @@ namespace DynORM
         /// <returns>New instance for the TModel Repository</returns>
         public IRepository<TModel> MakeNew<TModel>() where TModel : class
         {
-            var tableRequestBuilder = GetTableRequestBuilder<TModel>();
-            return new Repository<TModel>(_configReader.Credentials, _configReader.Endpoint, tableRequestBuilder);
+            return new Repository<TModel>(_configReader.Credentials, _configReader.Endpoint);
         }
 
         /// <summary>
@@ -70,8 +67,7 @@ namespace DynORM
         /// <returns>New instance for the TModel Repository</returns>
         public IRepository<TModel> MakeNew<TModel>(AWSCredentials credentials) where TModel : class
         {
-            var tableRequestBuilder = GetTableRequestBuilder<TModel>();
-            return new Repository<TModel>(credentials, _configReader.Endpoint, tableRequestBuilder);
+            return new Repository<TModel>(credentials, _configReader.Endpoint);
         }
 
         /// <summary>
@@ -83,23 +79,7 @@ namespace DynORM
         /// <returns>New instance for the TModel Repository</returns>
         public IRepository<TModel> MakeNew<TModel>(AWSCredentials credentials, RegionEndpoint endpoint) where TModel : class
         {
-            var tableRequestBuilder = GetTableRequestBuilder<TModel>();
-            return new Repository<TModel>(credentials, endpoint, tableRequestBuilder);
-        }
-
-        private TableRequestBuilder<TModel> GetTableRequestBuilder<TModel>() where TModel: class
-        {
-            TableRequestBuilder<TModel> tableRequestBuilder = null;
-            var key = typeof(TModel).FullName;
-            if (_tableRequestDictionary.ContainsKey(key))
-                tableRequestBuilder = (TableRequestBuilder<TModel>)_tableRequestDictionary[key];
-            else
-            {
-                tableRequestBuilder = new TableRequestBuilder<TModel>(_configReader.EnviromentPrefix);
-                _tableRequestDictionary.Add(key, tableRequestBuilder);
-            }
-
-            return tableRequestBuilder;
-        }
+            return new Repository<TModel>(credentials, endpoint);
+        }        
     }
 }
