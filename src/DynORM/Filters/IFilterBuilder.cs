@@ -173,32 +173,7 @@ namespace DynORM.Filters
         /// <param name="concatenationType">Concatenation type (And/Or)</param>
         /// <returns>Updated filter builder</returns>
         IFilterBuilder<TModel> WhereContains<TValue>(Expression<Func<TModel, TValue>> property, string target, FilterConcatenationType concatenationType) where TValue : class;
-
-        /// <summary>
-        /// True if the attribute specified contains a element within
-        /// </summary>
-        /// <typeparam name="TValue">Attribute specified type</typeparam>
-        /// <typeparam name="TTarget">Object to looking for</typeparam>
-        /// <param name="property">Attribute specified value</param>
-        /// <param name="target">Element to looking for</param>
-        /// <returns>Updated filter builder</returns>
-        IFilterBuilder<TModel> WhereContains<TValue, TTarget>(Expression<Func<TModel, TValue>> property, TTarget target)
-            where TValue : class
-            where TTarget : class;
-
-        /// <summary>
-        /// True if the attribute specified contains a element within
-        /// </summary>
-        /// <typeparam name="TValue">Attribute specified type</typeparam>
-        /// <typeparam name="TTarget">Object to looking for</typeparam>
-        /// <param name="property">Attribute specified value</param>
-        /// <param name="target">Element to looking for</param>
-        /// <param name="concatenationType">Concatenation type (And/Or)</param>
-        /// <returns>Updated filter builder</returns>
-        IFilterBuilder<TModel> WhereContains<TValue, TTarget>(Expression<Func<TModel, TValue>> property, TTarget target, FilterConcatenationType concatenationType)
-            where TValue : class
-            where TTarget : class;
-
+        
 
 
         /// <summary>

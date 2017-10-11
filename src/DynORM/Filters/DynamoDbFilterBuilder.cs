@@ -246,34 +246,62 @@ namespace DynORM.Filters
 
         public IFilterBuilder<TModel> WhereContains<TValue>(Expression<Func<TModel, TValue>> property, string target) where TValue : class
         {
-            throw new NotImplementedException();
+            return WhereContains(property, target, FilterConcatenationType.And);
         }
 
         public IFilterBuilder<TModel> WhereContains<TValue>(Expression<Func<TModel, TValue>> property, string target, FilterConcatenationType concatenationType) where TValue : class
         {
-            throw new NotImplementedException();
-        }
+            var memberExpression = property.Body as MemberExpression;
+            if (memberExpression == null)
+                throw new ExpressionNotSupportedException($"Expression {property} is unsupported");
 
-        public IFilterBuilder<TModel> WhereContains<TValue, TTarget>(Expression<Func<TModel, TValue>> property, TTarget target) where TValue : class where TTarget : class
-        {
-            throw new NotImplementedException();
-        }
+            var name = _propertyHelper.GetColumnName(memberExpression);
+            var key = "#" + name;
+            if (!_namesTokens.ContainsKey(key))
+                _namesTokens.Add(key, name);
 
-        public IFilterBuilder<TModel> WhereContains<TValue, TTarget>(Expression<Func<TModel, TValue>> property, TTarget target,
-            FilterConcatenationType concatenationType) where TValue : class where TTarget : class
-        {
-            throw new NotImplementedException();
-        }
+            var index = _valuesTokens.Count + 1;
+            var parameter = ":p" + index;
+            _valuesTokens.Add(parameter, new KeyValuePair<object, Type>(target, target.GetType()));
 
+            var query = $"contains ({key}, {parameter})";
+
+            if (_filters.Any())
+                _filters.Add($"{GetConcatenationValue(concatenationType)} {query}");
+            else
+                _filters.Add(query);
+
+            return this;
+        }
+        
         public IFilterBuilder<TModel> WhereSize<TValue>(Expression<Func<TModel, TValue>> property, ComparisonType comparisonType, int value) where TValue : class
         {
-            throw new NotImplementedException();
+            return WhereSize(property, comparisonType, value, FilterConcatenationType.And);
         }
 
-        public IFilterBuilder<TModel> WhereSize<TValue>(Expression<Func<TModel, TValue>> property, ComparisonType comparisonType, int value,
-            FilterConcatenationType concatenationType) where TValue : class
+        public IFilterBuilder<TModel> WhereSize<TValue>(Expression<Func<TModel, TValue>> property, ComparisonType comparisonType, int value, FilterConcatenationType concatenationType) where TValue : class
         {
-            throw new NotImplementedException();
+            var memberExpression = property.Body as MemberExpression;
+            if (memberExpression == null)
+                throw new ExpressionNotSupportedException($"Expression {property} is unsupported");
+
+            var name = _propertyHelper.GetColumnName(memberExpression);
+            var key = "#" + name;
+            if (!_namesTokens.ContainsKey(key))
+                _namesTokens.Add(key, name);
+
+            var index = _valuesTokens.Count + 1;
+            var parameter = ":p" + index;
+            _valuesTokens.Add(parameter, new KeyValuePair<object, Type>(value, value.GetType()));
+
+            var query = $"size ({key}) {GetLogicalOperator(comparisonType)} {parameter})";
+
+            if (_filters.Any())
+                _filters.Add($"{GetConcatenationValue(concatenationType)} {query}");
+            else
+                _filters.Add(query);
+
+            return this;
         }
 
         public ICompiledFilter Build()
@@ -341,6 +369,27 @@ namespace DynORM.Filters
 
                 default:
                     throw new NotSupportedException($"The expression type '{expressionType}' is not supported");
+            }
+        }
+
+        private string GetLogicalOperator(ComparisonType comparisonType)
+        {
+            switch (comparisonType)
+            {
+                case ComparisonType.Equal:
+                    return "=";
+                case ComparisonType.Greater:
+                    return ">";
+                case ComparisonType.GreaterOrEqual:
+                    return ">=";
+                case ComparisonType.Less:
+                    return "<";
+                case ComparisonType.LessOrEqual:
+                    return "<=";
+                case ComparisonType.NotEqual:
+                    return "<>";                
+                default:
+                    throw new NotSupportedException($"The omparison type '{comparisonType}' is not supported");
             }
         }
 

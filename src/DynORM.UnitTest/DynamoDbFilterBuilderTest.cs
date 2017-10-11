@@ -222,6 +222,48 @@ namespace DynORM.UnitTest
         }
 
         [Fact]
+        public void Contains()
+        {
+            IFilterBuilder<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            var compiledFilter = builder
+                .WhereContains(x => x.Email, "n1")
+                .Build();
+
+            var query = compiledFilter.GetQuery();
+            var values = compiledFilter.GetValues();
+            var names = compiledFilter.GetNames();
+
+            Assert.Equal("contains (#Email, :p1)", query);
+            Assert.Equal(values?.Count, 1);
+            Assert.Equal(names?.Count, 1);
+            Assert.Equal(names?.ContainsKey("#Email"), true);
+            Assert.Equal(names?["#Email"], "Email");
+            Assert.Equal(values?.ContainsKey(":p1"), true);
+            Assert.Equal(values?[":p1"].Key, "n1");
+        }
+
+        [Fact]
+        public void Size()
+        {
+            IFilterBuilder<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            var compiledFilter = builder
+                .WhereSize(x => x.Email, ComparisonType.Greater, 20)
+                .Build();
+
+            var query = compiledFilter.GetQuery();
+            var values = compiledFilter.GetValues();
+            var names = compiledFilter.GetNames();
+
+            Assert.Equal("size (#Email) > :p1)", query);
+            Assert.Equal(values?.Count, 1);
+            Assert.Equal(names?.Count, 1);
+            Assert.Equal(names?.ContainsKey("#Email"), true);
+            Assert.Equal(names?["#Email"], "Email");
+            Assert.Equal(values?.ContainsKey(":p1"), true);
+            Assert.Equal(values?[":p1"].Key, 20);
+        }
+
+        [Fact]
         public void InvalidWhere()
         {
             var correctError = false;
