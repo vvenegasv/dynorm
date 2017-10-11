@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Text;
+using DynORM.Enums;
+using DynORM.Exceptions;
 
-namespace DynORM.Filters
+namespace DynORM.Interfaces
 {
     public interface IFilterable<TModel> where TModel : class
     {

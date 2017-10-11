@@ -1,15 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using System.Text;
 using Amazon;
 using Amazon.Runtime;
 using DynORM.InternalModels;
-using DynORM.Models;
 using Newtonsoft.Json;
 
-namespace DynORM
+namespace DynORM.Helpers
 {
     internal class ConfigReader
     {

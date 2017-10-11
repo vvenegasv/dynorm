@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using DynORM.Filters;
+using DynORM.Enums;
+using DynORM.Exceptions;
+using DynORM.Implementations;
+using DynORM.Interfaces;
 using DynORM.UnitTest.Models;
 using Xunit;
 

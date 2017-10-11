@@ -1,12 +1,8 @@
-﻿using DynORM.Filters;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace DynORM
+namespace DynORM.Interfaces
 {
     public interface IRepository<TModel> where TModel: class
     {

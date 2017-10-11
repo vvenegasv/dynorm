@@ -1,15 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
-using System.Text;
 using Amazon;
-using Amazon.DynamoDBv2;
-using Amazon.DynamoDBv2.DataModel;
 using Amazon.Runtime;
-using Newtonsoft.Json;
+using DynORM.Implementations;
+using DynORM.Interfaces;
 
-namespace DynORM
+namespace DynORM.Helpers
 {
     /// <summary>
     /// Creates a new repository for dynamodb

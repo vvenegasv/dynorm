@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace DynORM.Filters
+namespace DynORM.Exceptions
 {
     public class ExpressionNotSupportedException: Exception
     {

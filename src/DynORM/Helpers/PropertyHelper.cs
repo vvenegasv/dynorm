@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Text;
 using Amazon.DynamoDBv2.DataModel;
 using System.Linq.Expressions;
-using DynORM.Filters;
+using DynORM.Exceptions;
 
 namespace DynORM.Helpers
 {

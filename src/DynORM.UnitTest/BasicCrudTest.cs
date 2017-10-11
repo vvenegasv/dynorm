@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using DynORM.Helpers;
 using DynORM.UnitTest.Common;
 using DynORM.UnitTest.Models;
 using Xunit;

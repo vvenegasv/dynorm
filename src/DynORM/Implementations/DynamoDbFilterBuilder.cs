@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Linq.Expressions;
+using DynORM.Enums;
+using DynORM.Exceptions;
 using DynORM.Helpers;
-using System.Collections.ObjectModel;
+using DynORM.Interfaces;
 
-namespace DynORM.Filters
+namespace DynORM.Implementations
 {
     public class DynamoDbFilterBuilder<TModel> : IFilterUsable, IFilterable<TModel> where TModel : class
     {

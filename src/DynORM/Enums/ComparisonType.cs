@@ -1,4 +1,4 @@
-﻿namespace DynORM.Filters
+﻿namespace DynORM.Enums
 {
     public enum ComparisonType
     {
