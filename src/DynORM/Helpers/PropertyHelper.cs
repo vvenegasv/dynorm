@@ -49,5 +49,16 @@ namespace DynORM.Helpers
             var memberInfo = property.Member;
             return GetColumnName(memberInfo);
         }
+
+        public string GetTableName<TModel>(TModel item) where TModel : class
+        {
+            var type = item.GetType();
+            var attribute = type.GetTypeInfo().GetCustomAttribute<DynamoDBTableAttribute>();
+            if(attribute != null)
+                if (!string.IsNullOrWhiteSpace(attribute.TableName))
+                    return attribute.TableName;
+
+            return type.Name;
+        }
     }
 }

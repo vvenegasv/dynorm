@@ -11,18 +11,28 @@ namespace DynORM.Implementations
 {
     public class Repository<TModel> : IRepository<TModel> where TModel : class
     {
-        private readonly AWSCredentials _credentials;        
+        private readonly AWSCredentials _credentials;
+        private readonly RegionEndpoint _endpoint;
+        private readonly PropertyHelper _propertyHelper;
 
         internal Repository(AWSCredentials credentials, RegionEndpoint endpoint)
         {
             _credentials = credentials;
+            _endpoint = endpoint;
+            _propertyHelper = PropertyHelper.Instance;
         }
 
-        public bool IsConsistentRead { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public bool IsConsistentRead { get; set; }
 
         public Task Create(TModel item)
         {
-            throw new NotImplementedException();
+            if(item == null)
+                throw new ArgumentNullException(nameof(item));
+
+            var client = GetDynamoDbClient();
+            var tableName = _propertyHelper.GetTableName(item);
+            //client.PutItemAsync(tableName, )
+            return null;
         }
 
         public Task Create(TModel item, IFilterable<TModel> condition)
@@ -121,11 +131,11 @@ namespace DynORM.Implementations
             if (_credentials == null)
             {
                 var config = new AmazonDynamoDBConfig();
-                config.RegionEndpoint = ConfigReader.Instance.Endpoint;
+                config.RegionEndpoint = _endpoint;
                 return new AmazonDynamoDBClient(config);
             }
             
-            return new AmazonDynamoDBClient(_credentials, ConfigReader.Instance.Endpoint);
+            return new AmazonDynamoDBClient(_credentials, _endpoint);
         }
         
     }
