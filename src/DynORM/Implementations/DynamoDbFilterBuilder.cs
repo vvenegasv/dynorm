@@ -7,7 +7,7 @@ using System.Collections.ObjectModel;
 
 namespace DynORM.Filters
 {
-    public class DynamoDbFilterBuilder<TModel> : ICompiledFilter, IFilterBuilder<TModel> where TModel : class
+    public class DynamoDbFilterBuilder<TModel> : IFilterUsable, IFilterable<TModel> where TModel : class
     {
         private readonly IList<string> _filters;
         private readonly IDictionary<string, string> _namesTokens;
@@ -30,12 +30,12 @@ namespace DynORM.Filters
         }
 
 
-        public IFilterBuilder<TModel> Where(Expression<Func<TModel, bool>> expression)
+        public IFilterable<TModel> Where(Expression<Func<TModel, bool>> expression)
         {
             return Where(expression, FilterConcatenationType.And);
         }
 
-        public IFilterBuilder<TModel> Where(Expression<Func<TModel, bool>> expression, FilterConcatenationType concatenationType)
+        public IFilterable<TModel> Where(Expression<Func<TModel, bool>> expression, FilterConcatenationType concatenationType)
         {
             if (expression?.Body is BinaryExpression)
             {                
@@ -50,12 +50,12 @@ namespace DynORM.Filters
             return this;
         }
 
-        public IFilterBuilder<TModel> Where(IFilterBuilder<TModel> filter)
+        public IFilterable<TModel> Where(IFilterable<TModel> filter)
         {
             return Where(filter, FilterConcatenationType.And);
         }
 
-        public IFilterBuilder<TModel> Where(IFilterBuilder<TModel> filter, FilterConcatenationType concatenationType)
+        public IFilterable<TModel> Where(IFilterable<TModel> filter, FilterConcatenationType concatenationType)
         {
             if(filter == null)
                 throw new ArgumentNullException(nameof(filter), $"{nameof(filter)} cannot be null");
@@ -90,12 +90,12 @@ namespace DynORM.Filters
             return this;
         }
 
-        public IFilterBuilder<TModel> WhereIn<TValue>(Expression<Func<TModel, TValue>> property, IEnumerable<TValue> values) where TValue : class
+        public IFilterable<TModel> WhereIn<TValue>(Expression<Func<TModel, TValue>> property, IEnumerable<TValue> values) where TValue : class
         {
             return WhereIn(property, values, FilterConcatenationType.And);
         }
 
-        public IFilterBuilder<TModel> WhereIn<TValue>(Expression<Func<TModel, TValue>> property, IEnumerable<TValue> values, FilterConcatenationType concatenationType) where TValue : class
+        public IFilterable<TModel> WhereIn<TValue>(Expression<Func<TModel, TValue>> property, IEnumerable<TValue> values, FilterConcatenationType concatenationType) where TValue : class
         {
             if (property?.NodeType != ExpressionType.Lambda)
                 throw new ExpressionNotSupportedException($"Expression {property} is unsupported");
@@ -130,12 +130,12 @@ namespace DynORM.Filters
             return this;
         }
 
-        public IFilterBuilder<TModel> WhereAttributeExists<TValue>(Expression<Func<TModel, TValue>> property) where TValue : class
+        public IFilterable<TModel> WhereAttributeExists<TValue>(Expression<Func<TModel, TValue>> property) where TValue : class
         {
             return WhereAttributeExists(property, FilterConcatenationType.And);
         }
 
-        public IFilterBuilder<TModel> WhereAttributeExists<TValue>(Expression<Func<TModel, TValue>> property, FilterConcatenationType concatenationType) where TValue : class
+        public IFilterable<TModel> WhereAttributeExists<TValue>(Expression<Func<TModel, TValue>> property, FilterConcatenationType concatenationType) where TValue : class
         {
             var memberExpression = property.Body as MemberExpression;
             if (memberExpression == null)
@@ -154,12 +154,12 @@ namespace DynORM.Filters
             return this;
         }
 
-        public IFilterBuilder<TModel> WhereAttributeExists(string property)
+        public IFilterable<TModel> WhereAttributeExists(string property)
         {
             return WhereAttributeExists(property, FilterConcatenationType.And);
         }
 
-        public IFilterBuilder<TModel> WhereAttributeExists(string property, FilterConcatenationType concatenationType)
+        public IFilterable<TModel> WhereAttributeExists(string property, FilterConcatenationType concatenationType)
         {
             var key = "#" + property;
             if(!_namesTokens.ContainsKey(key))
@@ -173,12 +173,12 @@ namespace DynORM.Filters
             return this;
         }
 
-        public IFilterBuilder<TModel> WhereAttributeNotExists<TValue>(Expression<Func<TModel, TValue>> property) where TValue : class
+        public IFilterable<TModel> WhereAttributeNotExists<TValue>(Expression<Func<TModel, TValue>> property) where TValue : class
         {
             return WhereAttributeNotExists(property, FilterConcatenationType.And);
         }
 
-        public IFilterBuilder<TModel> WhereAttributeNotExists<TValue>(Expression<Func<TModel, TValue>> property, FilterConcatenationType concatenationType) where TValue : class
+        public IFilterable<TModel> WhereAttributeNotExists<TValue>(Expression<Func<TModel, TValue>> property, FilterConcatenationType concatenationType) where TValue : class
         {
             var memberExpression = property.Body as MemberExpression;
             if (memberExpression == null)
@@ -197,12 +197,12 @@ namespace DynORM.Filters
             return this;
         }
 
-        public IFilterBuilder<TModel> WhereAttributeNotExists(string property)
+        public IFilterable<TModel> WhereAttributeNotExists(string property)
         {
             return WhereAttributeNotExists(property, FilterConcatenationType.And);
         }
 
-        public IFilterBuilder<TModel> WhereAttributeNotExists(string property, FilterConcatenationType concatenationType)
+        public IFilterable<TModel> WhereAttributeNotExists(string property, FilterConcatenationType concatenationType)
         {
             var key = "#" + property;
             if (!_namesTokens.ContainsKey(key))
@@ -216,12 +216,12 @@ namespace DynORM.Filters
             return this;
         }
 
-        public IFilterBuilder<TModel> WhereBeginsWith<TValue>(Expression<Func<TModel, TValue>> property, string substring) where TValue : class
+        public IFilterable<TModel> WhereBeginsWith<TValue>(Expression<Func<TModel, TValue>> property, string substring) where TValue : class
         {
             return WhereBeginsWith(property, substring, FilterConcatenationType.And);
         }
 
-        public IFilterBuilder<TModel> WhereBeginsWith<TValue>(Expression<Func<TModel, TValue>> property, string substring, FilterConcatenationType concatenationType) where TValue : class
+        public IFilterable<TModel> WhereBeginsWith<TValue>(Expression<Func<TModel, TValue>> property, string substring, FilterConcatenationType concatenationType) where TValue : class
         {
             var memberExpression = property.Body as MemberExpression;
             if (memberExpression == null)
@@ -244,12 +244,12 @@ namespace DynORM.Filters
             return this;
         }
 
-        public IFilterBuilder<TModel> WhereContains<TValue>(Expression<Func<TModel, TValue>> property, string target) where TValue : class
+        public IFilterable<TModel> WhereContains<TValue>(Expression<Func<TModel, TValue>> property, string target) where TValue : class
         {
             return WhereContains(property, target, FilterConcatenationType.And);
         }
 
-        public IFilterBuilder<TModel> WhereContains<TValue>(Expression<Func<TModel, TValue>> property, string target, FilterConcatenationType concatenationType) where TValue : class
+        public IFilterable<TModel> WhereContains<TValue>(Expression<Func<TModel, TValue>> property, string target, FilterConcatenationType concatenationType) where TValue : class
         {
             var memberExpression = property.Body as MemberExpression;
             if (memberExpression == null)
@@ -274,12 +274,12 @@ namespace DynORM.Filters
             return this;
         }
         
-        public IFilterBuilder<TModel> WhereSize<TValue>(Expression<Func<TModel, TValue>> property, ComparisonType comparisonType, int value) where TValue : class
+        public IFilterable<TModel> WhereSize<TValue>(Expression<Func<TModel, TValue>> property, ComparisonType comparisonType, int value) where TValue : class
         {
             return WhereSize(property, comparisonType, value, FilterConcatenationType.And);
         }
 
-        public IFilterBuilder<TModel> WhereSize<TValue>(Expression<Func<TModel, TValue>> property, ComparisonType comparisonType, int value, FilterConcatenationType concatenationType) where TValue : class
+        public IFilterable<TModel> WhereSize<TValue>(Expression<Func<TModel, TValue>> property, ComparisonType comparisonType, int value, FilterConcatenationType concatenationType) where TValue : class
         {
             var memberExpression = property.Body as MemberExpression;
             if (memberExpression == null)
@@ -304,7 +304,7 @@ namespace DynORM.Filters
             return this;
         }
 
-        public ICompiledFilter Build()
+        public IFilterUsable Build()
         {
             return this;
         }

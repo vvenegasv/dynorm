@@ -24,12 +24,14 @@ namespace DynORM
             _credentials = credentials;
         }
 
+        public bool IsConsistentRead { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
         public Task Create(TModel item)
         {
             throw new NotImplementedException();
         }
 
-        public Task Create(TModel item, IFilterBuilder<TModel> condition)
+        public Task Create(TModel item, IFilterable<TModel> condition)
         {
             throw new NotImplementedException();
         }
@@ -39,27 +41,68 @@ namespace DynORM
             throw new NotImplementedException();
         }
 
-        public Task Delete(TModel item, IFilterBuilder<TModel> condition)
+        public Task Delete(TModel item, IFilterable<TModel> condition)
         {
             throw new NotImplementedException();
         }
 
-        public Task Delete(IFilterBuilder<TModel> condition)
+        public Task Delete(IFilterable<TModel> condition)
         {
             throw new NotImplementedException();
         }
 
-        public Task<TModel> GetOne<THashKey>(THashKey hashKey)
+        public Task<TModel> GetOne<THashKey>(THashKey hashKey) where THashKey : class
         {
             throw new NotImplementedException();
         }
 
         public Task<TModel> GetOne<THashKey, TRangeKey>(THashKey hashKey, TRangeKey rangeKey)
+            where THashKey : class
+            where TRangeKey : class
         {
             throw new NotImplementedException();
         }
 
-        public Task<IEnumerable<TModel>> QueryByIndex<TIndex>(IFilterBuilder<TIndex> filter) where TIndex : class
+        public IScannable<TModel> Query<THashKey>(THashKey hashKey) where THashKey : class
+        {
+            throw new NotImplementedException();
+        }
+
+        public IScannable<TModel> Query<THashKey>(THashKey hashKey, Dictionary<string, Tuple<object, Type>> lastEvaluatedKey) where THashKey : class
+        {
+            throw new NotImplementedException();
+        }
+
+        public IScannable<TProjection> Query<TIndex, TProjection>(IFilterable<TIndex> filter)
+            where TIndex : class
+            where TProjection : class
+        {
+            throw new NotImplementedException();
+        }
+
+        public IScannable<TProjection> Query<TIndex, TProjection>(IFilterable<TIndex> filter, Dictionary<string, Tuple<object, Type>> lastEvaluatedKey)
+            where TIndex : class
+            where TProjection : class
+        {
+            throw new NotImplementedException();
+        }
+
+        public IScannable<TModel> Scan(IFilterable<TModel> filter)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IScannable<TModel> Scan(IFilterable<TModel> filter, Dictionary<string, Tuple<object, Type>> lastEvaluatedKey)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IScannable<TModel> Scan()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IScannable<TModel> Scan(Dictionary<string, Tuple<object, Type>> lastEvaluatedKey)
         {
             throw new NotImplementedException();
         }
@@ -69,12 +112,12 @@ namespace DynORM
             throw new NotImplementedException();
         }
 
-        public Task Update(TModel item, IFilterBuilder<TModel> condition)
+        public Task Update(TModel item, IFilterable<TModel> condition)
         {
             throw new NotImplementedException();
         }
 
-        public Task Update(dynamic item, IFilterBuilder<TModel> condition)
+        public Task Update(dynamic item, IFilterable<TModel> condition)
         {
             throw new NotImplementedException();
         }

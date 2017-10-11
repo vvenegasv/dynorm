@@ -12,7 +12,7 @@ namespace DynORM.UnitTest
         [Fact]
         public void SingleExpression()
         {
-            IFilterBuilder<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
             var compiledFilter = builder.Where(x => x.Name == "some name").Build();
             var query = compiledFilter.GetQuery();
             var values = compiledFilter.GetValues();
@@ -28,7 +28,7 @@ namespace DynORM.UnitTest
         [Fact]
         public void TwoExpression()
         {
-            IFilterBuilder<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
             var compiledFilter = builder
                 .Where(x => x.Email == "n1" && x.Name == "n2")
                 .Build();
@@ -50,7 +50,7 @@ namespace DynORM.UnitTest
         [Fact]
         public void TwoWhere()
         {
-            IFilterBuilder<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
             var compiledFilter = builder
                 .Where(x => x.Email == "n1" && x.Name == "n2")
                 .Where(x => x.Phone == "123", FilterConcatenationType.Or)
@@ -77,7 +77,7 @@ namespace DynORM.UnitTest
         [Fact]
         public void FilterAsParameter()
         {
-            IFilterBuilder<PersonModel> filter = new DynamoDbFilterBuilder<PersonModel>();
+            IFilterable<PersonModel> filter = new DynamoDbFilterBuilder<PersonModel>();
             filter
                 .Where(x => x.Email == "n1" && x.Name == "n2")
                 .Where(x => x.Phone == "123", FilterConcatenationType.Or);
@@ -108,7 +108,7 @@ namespace DynORM.UnitTest
         [Fact]
         public void In()
         {
-            IFilterBuilder<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
             var compiledFilter = builder
                 .WhereIn(x => x.Email, new List<string>() { "n1", "n2", "n3" })
                 .Build();
@@ -131,7 +131,7 @@ namespace DynORM.UnitTest
         [Fact]
         public void AttributeExists()
         {
-            IFilterBuilder<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
             var compiledFilter = builder
                 .WhereAttributeExists(x => x.Email)
                 .Build();
@@ -149,7 +149,7 @@ namespace DynORM.UnitTest
         [Fact]
         public void AttributeExistsAsString()
         {
-            IFilterBuilder<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
             var compiledFilter = builder
                 .WhereAttributeExists("Correo")
                 .Build();
@@ -167,7 +167,7 @@ namespace DynORM.UnitTest
         [Fact]
         public void AttributeNotExists()
         {
-            IFilterBuilder<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
             var compiledFilter = builder
                 .WhereAttributeNotExists(x => x.Email)
                 .Build();
@@ -185,7 +185,7 @@ namespace DynORM.UnitTest
         [Fact]
         public void AttributeNotExistsAsString()
         {
-            IFilterBuilder<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
             var compiledFilter = builder
                 .WhereAttributeNotExists("Correo")
                 .Build();
@@ -203,7 +203,7 @@ namespace DynORM.UnitTest
         [Fact]
         public void BeginsWith()
         {
-            IFilterBuilder<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
             var compiledFilter = builder
                 .WhereBeginsWith(x => x.Email, "n1")
                 .Build();
@@ -224,7 +224,7 @@ namespace DynORM.UnitTest
         [Fact]
         public void Contains()
         {
-            IFilterBuilder<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
             var compiledFilter = builder
                 .WhereContains(x => x.Email, "n1")
                 .Build();
@@ -245,7 +245,7 @@ namespace DynORM.UnitTest
         [Fact]
         public void Size()
         {
-            IFilterBuilder<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
             var compiledFilter = builder
                 .WhereSize(x => x.Email, ComparisonType.Greater, 20)
                 .Build();
@@ -267,7 +267,7 @@ namespace DynORM.UnitTest
         public void InvalidWhere()
         {
             var correctError = false;
-            IFilterBuilder<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
             try
             {
                 var query = builder.Where(x => x.Name.EndsWith("invalid!")).Build();

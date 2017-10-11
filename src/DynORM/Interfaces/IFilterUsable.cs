@@ -4,7 +4,7 @@ using System.Text;
 
 namespace DynORM.Filters
 {
-    public interface ICompiledFilter
+    public interface IFilterUsable
     {
         /// <summary>
         /// Get the compiled query string
