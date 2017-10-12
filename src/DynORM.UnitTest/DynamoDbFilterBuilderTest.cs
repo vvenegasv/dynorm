@@ -56,13 +56,13 @@ namespace DynORM.UnitTest
             IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
             var compiledFilter = builder
                 .Where(x => x.Email == "n1" && x.Name == "n2")
-                .Where(x => x.Phone == "123", FilterConcatenationType.Or)
+                .Where(x => x.PersonId == "123", FilterConcatenationType.Or)
                 .Build();
             var query = compiledFilter.GetQuery();
             var values = compiledFilter.GetValues();
             var names = compiledFilter.GetNames();
 
-            Assert.Equal("#Email = :p1 AND #Name = :p2 OR #Phone = :p3", query);
+            Assert.Equal("#Email = :p1 AND #Name = :p2 OR #PersonId = :p3", query);
             Assert.Equal(values?.ContainsKey(":p1"), true);
             Assert.Equal(values?.ContainsKey(":p2"), true);
             Assert.Equal(values?.ContainsKey(":p3"), true);
@@ -71,10 +71,10 @@ namespace DynORM.UnitTest
             Assert.Equal(values?[":p3"].Key, "123");
             Assert.Equal(names?.ContainsKey("#Email"), true);
             Assert.Equal(names?.ContainsKey("#Name"), true);
-            Assert.Equal(names?.ContainsKey("#Phone"), true);
+            Assert.Equal(names?.ContainsKey("#PersonId"), true);
             Assert.Equal(names?["#Name"], "Name");
             Assert.Equal(names?["#Email"], "Email");
-            Assert.Equal(names?["#Phone"], "Phone");
+            Assert.Equal(names?["#PersonId"], "PersonId");
         }
 
         [Fact]
@@ -83,7 +83,7 @@ namespace DynORM.UnitTest
             IFilterable<PersonModel> filter = new DynamoDbFilterBuilder<PersonModel>();
             filter
                 .Where(x => x.Email == "n1" && x.Name == "n2")
-                .Where(x => x.Phone == "123", FilterConcatenationType.Or);
+                .Where(x => x.PersonId == "123", FilterConcatenationType.Or);
 
             var compiledFilter = new DynamoDbFilterBuilder<PersonModel>()
                 .Where(filter)
@@ -93,11 +93,11 @@ namespace DynORM.UnitTest
             var names = compiledFilter.GetNames();
             var values = compiledFilter.GetValues();
 
-            Assert.Equal("(#Email = :p1 AND #Name = :p2 OR #Phone = :p3)", query);
+            Assert.Equal("(#Email = :p1 AND #Name = :p2 OR #PersonId = :p3)", query);
             Assert.Equal(names?.ContainsKey("#Email"), true);
             Assert.Equal(names?.ContainsKey("#Name"), true);
-            Assert.Equal(names?.ContainsKey("#Phone"), true);
-            Assert.Equal(names?["#Phone"], "Phone");
+            Assert.Equal(names?.ContainsKey("#PersonId"), true);
+            Assert.Equal(names?["#PersonId"], "PersonId");
             Assert.Equal(names?["#Name"], "Name");
             Assert.Equal(names?["#Email"], "Email");
             Assert.Equal(values?.ContainsKey(":p1"), true);

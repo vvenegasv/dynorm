@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Amazon;
 using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2.Model;
 using Amazon.Runtime;
 using DynORM.Helpers;
 using DynORM.Interfaces;
+using DynORM.Mappers;
 
 namespace DynORM.Implementations
 {
@@ -24,15 +26,16 @@ namespace DynORM.Implementations
 
         public bool IsConsistentRead { get; set; }
 
-        public Task Create(TModel item)
+        public async Task Create(TModel item)
         {
             if(item == null)
                 throw new ArgumentNullException(nameof(item));
 
             var client = GetDynamoDbClient();
-            var tableName = _propertyHelper.GetTableName(item);
-            //client.PutItemAsync(tableName, )
-            return null;
+            var putRequest = new PutItemRequest();
+            putRequest.TableName = _propertyHelper.GetTableName(item);
+            putRequest.Item = ItemMapper.Instance.ToDictionary(item);
+            var response = await client.PutItemAsync(putRequest);
         }
 
         public Task Create(TModel item, IFilterable<TModel> condition)

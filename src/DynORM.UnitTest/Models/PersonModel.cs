@@ -10,14 +10,14 @@ namespace DynORM.UnitTest.Models
     {
         [DynamoDBHashKey()]
         public string PersonId { get; set; }
-
+        
         [DynamoDBProperty]
         public string Name { get; set; }
-
-        [DynamoDBProperty]
-        public string Phone { get; set; }
-
+        
         [DynamoDBProperty]
         public string Email { get; set; }
+
+        [DynamoDBProperty]
+        public List<PhoneModel> Phones { get; set; }
     }
 }

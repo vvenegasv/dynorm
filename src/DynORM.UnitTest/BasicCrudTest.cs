@@ -10,12 +10,11 @@ namespace DynORM.UnitTest
     public class BasicCrudTest
     {
         [Fact]
-        public void InsertTest()
+        public async void InsertTest()
         {
             var repository = RepositoryFactory.Instance.MakeNew<PersonModel>();
             var model = PersonFactory.Instance.MakePerson();
-
-            repository.Update(new { Email = "" }, null);            
+            await repository.Create(model);
         }
     }
 }

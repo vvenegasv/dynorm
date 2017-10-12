@@ -51,12 +51,20 @@ namespace DynORM.UnitTest.Common
         public PersonModel MakePerson()
         {
             var name = MakeName();
+            var index = _random.Next(1, 10);
+            var phones = new List<PhoneModel>(index);
+
+            for (int i = 0; i < index; i++)
+            {
+                phones.Add(MakePhone());
+            }
+
             return new PersonModel
             {
                 PersonId = Guid.NewGuid().ToString(),
                 Name = name,
                 Email = MakeEmail(name),
-                Phone = MakePhone()
+                Phones = phones
             };
         }
 
@@ -104,13 +112,17 @@ namespace DynORM.UnitTest.Common
             return value % 2 != 0;
         }
 
-        private string MakePhone()
+        private PhoneModel MakePhone()
         {
             var number = _random.Next(7, 9).ToString();
             for (int i = 0; i < 9; i++)
                 number += _random.Next(0, 9).ToString();
 
-            return number;
+            return new PhoneModel
+            {
+                Number = number,
+                PhoneType = _random.Next(0, 1).Equals(1) ? PhoneType.LandLine : PhoneType.CellPhone
+            };
         }
     }
 }
