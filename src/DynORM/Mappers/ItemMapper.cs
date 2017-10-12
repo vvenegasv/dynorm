@@ -11,34 +11,33 @@ using DynORM.Helpers;
 
 namespace DynORM.Mappers
 {
-    internal class ItemMapper
+    internal class ItemMapper<TItem> where TItem : class
     {
-        private static volatile ItemMapper _instance;
-        private static object _syncRoot = new Object();
         private readonly MetadataHelper _metadata;
-
-        private ItemMapper()
+        private readonly PropertyHelper _propertyHelper;
+        private readonly Dictionary<string, string> _names;
+        private readonly TItem _item;
+        
+        public ItemMapper(TItem item)
         {
+            _item = item;
+            _propertyHelper = PropertyHelper.Instance;
             _metadata = MetadataHelper.Instance;
+            _names = new Dictionary<string, string>();
         }
 
-        public static ItemMapper Instance
+        public PutItemRequest ToRequest()
         {
-            get
+            return new PutItemRequest
             {
-                if (_instance == null)
-                {
-                    lock (_syncRoot)
-                    {
-                        if (_instance == null)
-                            _instance = new ItemMapper();
-                    }
-                }
-                return _instance;
-            }
+                TableName = _propertyHelper.GetTableName(_item),
+                Item = ToDictionary(_item),
+                ExpressionAttributeNames = _names
+            };
         }
 
-        public Dictionary<string, AttributeValue> ToDictionary<TModel>(TModel item) where TModel : class
+
+        private Dictionary<string, AttributeValue> ToDictionary<TModel>(TModel item) where TModel : class
         {
             var typeInfo = item.GetType().GetTypeInfo();
             var data = new Dictionary<string, AttributeValue>();
@@ -71,9 +70,10 @@ namespace DynORM.Mappers
                 else
                     name = property.Name;
 
-                
-
-                data.Add(name, value);
+                var alias = "#" + name;
+                data.Add(alias, value);
+                if(!_names.ContainsKey(alias))
+                    _names.Add(alias, name);
             }
 
             return data;
@@ -154,3 +154,4 @@ namespace DynORM.Mappers
         }
     }
 }
+

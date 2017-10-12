@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Amazon;
 using Amazon.DynamoDBv2;
@@ -32,15 +33,30 @@ namespace DynORM.Implementations
                 throw new ArgumentNullException(nameof(item));
 
             var client = GetDynamoDbClient();
-            var putRequest = new PutItemRequest();
-            putRequest.TableName = _propertyHelper.GetTableName(item);
-            putRequest.Item = ItemMapper.Instance.ToDictionary(item);
+            var putRequest = new ItemMapper<TModel>(item).ToRequest();
             var response = await client.PutItemAsync(putRequest);
         }
 
-        public Task Create(TModel item, IFilterable<TModel> condition)
+        public async Task Create(TModel item, IFilterable<TModel> condition)
         {
-            throw new NotImplementedException();
+            if (item == null)
+                throw new ArgumentNullException(nameof(item));
+
+            var usable = condition.Build();
+            var client = GetDynamoDbClient();
+            var putRequest = new ItemMapper<TModel>(item).ToRequest();
+            putRequest.ConditionExpression = usable.GetQuery();
+
+            foreach (var kv in usable.GetNames())
+                if(!putRequest.ExpressionAttributeNames.ContainsKey(kv.Key))
+                    putRequest.ExpressionAttributeNames.Add(kv.Key, kv.Value);
+
+            putRequest.ExpressionAttributeValues = usable
+                .GetValues()
+                .Select(x => new KeyValuePair<string, AttributeValue>(x.Key, x.Value.Item1))
+                .ToDictionary(x => x)
+            
+            var response = await client.PutItemAsync(putRequest);
         }
 
         public Task Delete(TModel item)

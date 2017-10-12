@@ -21,6 +21,6 @@ namespace DynORM.Interfaces
         /// Get parameter values
         /// </summary>
         /// <returns>Dictionary with parameter values</returns>
-        IReadOnlyDictionary<string, KeyValuePair<object, Type>> GetValues();
+        IReadOnlyDictionary<string, Tuple<string, Type>> GetValues();
     }
 }

@@ -14,7 +14,7 @@ namespace DynORM.Implementations
     {
         private readonly IList<string> _filters;
         private readonly IDictionary<string, string> _namesTokens;
-        private readonly IDictionary<string, KeyValuePair<object, Type>> _valuesTokens;
+        private readonly IDictionary<string, Tuple<string, Type>> _valuesTokens;
         private readonly PropertyHelper _propertyHelper;
 
 
@@ -23,7 +23,7 @@ namespace DynORM.Implementations
             _propertyHelper = PropertyHelper.Instance;
             _filters = new List<string>();
             _namesTokens = new Dictionary<string, string>();
-            _valuesTokens = new Dictionary<string, KeyValuePair<object, Type>>();
+            _valuesTokens = new Dictionary<string, Tuple<string, Type>>();
         }
 
         public DynamoDbFilterBuilder(string filter)
@@ -123,7 +123,7 @@ namespace DynORM.Implementations
                 var index = _valuesTokens.Count + 1;
                 var param = ":p" + index;
                 parameters.Add(param);
-                _valuesTokens.Add(param, new KeyValuePair<object, Type>(val, val.GetType()));
+                _valuesTokens.Add(param, new Tuple<string, Type>(val.ToString(), val.GetType()));
             }
 
             filter += string.Join(", ", parameters);
@@ -237,7 +237,7 @@ namespace DynORM.Implementations
 
             var index = _valuesTokens.Count + 1;
             var parameter = ":p" + index;
-            _valuesTokens.Add(parameter, new KeyValuePair<object, Type>(substring, substring.GetType()));
+            _valuesTokens.Add(parameter, new Tuple<string, Type>(substring, substring.GetType()));
 
             if (_filters.Any())
                 _filters.Add($"{GetConcatenationValue(concatenationType)} begins_with ({key}, {parameter})");
@@ -265,7 +265,7 @@ namespace DynORM.Implementations
 
             var index = _valuesTokens.Count + 1;
             var parameter = ":p" + index;
-            _valuesTokens.Add(parameter, new KeyValuePair<object, Type>(target, target.GetType()));
+            _valuesTokens.Add(parameter, new Tuple<string, Type>(target, target.GetType()));
 
             var query = $"contains ({key}, {parameter})";
 
@@ -295,7 +295,7 @@ namespace DynORM.Implementations
 
             var index = _valuesTokens.Count + 1;
             var parameter = ":p" + index;
-            _valuesTokens.Add(parameter, new KeyValuePair<object, Type>(value, value.GetType()));
+            _valuesTokens.Add(parameter, new Tuple<string, Type>(value.ToString(), value.GetType()));
 
             var query = $"size ({key}) {GetLogicalOperator(comparisonType)} {parameter})";
 
@@ -324,9 +324,9 @@ namespace DynORM.Implementations
             return new ReadOnlyDictionary<string, string>(this._namesTokens);
         }
 
-        public IReadOnlyDictionary<string, KeyValuePair<object, Type>> GetValues()
+        public IReadOnlyDictionary<string, Tuple<string, Type>> GetValues()
         {
-            return new ReadOnlyDictionary<string, KeyValuePair<object, Type>>(this._valuesTokens);
+            return new ReadOnlyDictionary<string, Tuple<string, Type>>(this._valuesTokens);
         }
 
 
@@ -416,7 +416,7 @@ namespace DynORM.Implementations
                 var value = (string)(expression as ConstantExpression).Value;
                 var index = _valuesTokens.Count + 1;
                 var token = $":p{index}";
-                _valuesTokens.Add(token, new KeyValuePair<object, Type>(value, typeof(string)));
+                _valuesTokens.Add(token, new Tuple<string, Type>(value, typeof(string)));
                 return token;
             }
 
