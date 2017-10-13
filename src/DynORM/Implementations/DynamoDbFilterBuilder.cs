@@ -7,15 +7,20 @@ using DynORM.Enums;
 using DynORM.Exceptions;
 using DynORM.Helpers;
 using DynORM.Interfaces;
+using DynORM.Models;
 
 namespace DynORM.Implementations
 {
     public class DynamoDbFilterBuilder<TModel> : IFilterUsable, IFilterable<TModel> where TModel : class
     {
+        private readonly PropertyHelper _propertyHelper;
+
+        /// <summary>
+        /// Dictionary Key=Parameter, Value=Tuple[Object Value, Destination Type, Convert Type]
+        /// </summary>
+        private readonly IDictionary<string, Tuple<object, PropertyType, Type>> _valuesTokens;
         private readonly IList<string> _filters;
         private readonly IDictionary<string, string> _namesTokens;
-        private readonly IDictionary<string, Tuple<string, Type>> _valuesTokens;
-        private readonly PropertyHelper _propertyHelper;
 
 
         public DynamoDbFilterBuilder() : base()
@@ -23,7 +28,7 @@ namespace DynORM.Implementations
             _propertyHelper = PropertyHelper.Instance;
             _filters = new List<string>();
             _namesTokens = new Dictionary<string, string>();
-            _valuesTokens = new Dictionary<string, Tuple<string, Type>>();
+            _valuesTokens = new Dictionary<string, Tuple<object, Type, Type>>();
         }
 
         public DynamoDbFilterBuilder(string filter)
@@ -31,6 +36,7 @@ namespace DynORM.Implementations
             _filters = new List<string>();
             _filters.Add(filter);
         }
+
 
 
         public IFilterable<TModel> Where(Expression<Func<TModel, bool>> expression)
@@ -123,7 +129,7 @@ namespace DynORM.Implementations
                 var index = _valuesTokens.Count + 1;
                 var param = ":p" + index;
                 parameters.Add(param);
-                _valuesTokens.Add(param, new Tuple<string, Type>(val.ToString(), val.GetType()));
+                _valuesTokens.Add(param, new Tuple<object, Type, Type>(val, val.GetType(), null));
             }
 
             filter += string.Join(", ", parameters);
@@ -237,7 +243,7 @@ namespace DynORM.Implementations
 
             var index = _valuesTokens.Count + 1;
             var parameter = ":p" + index;
-            _valuesTokens.Add(parameter, new Tuple<string, Type>(substring, substring.GetType()));
+            _valuesTokens.Add(parameter, new Tuple<object, Type, Type>(substring, substring.GetType(), null));
 
             if (_filters.Any())
                 _filters.Add($"{GetConcatenationValue(concatenationType)} begins_with ({key}, {parameter})");
@@ -265,7 +271,7 @@ namespace DynORM.Implementations
 
             var index = _valuesTokens.Count + 1;
             var parameter = ":p" + index;
-            _valuesTokens.Add(parameter, new Tuple<string, Type>(target, target.GetType()));
+            _valuesTokens.Add(parameter, new Tuple<object, Type, Type>(target, target.GetType(), null));
 
             var query = $"contains ({key}, {parameter})";
 
@@ -295,7 +301,7 @@ namespace DynORM.Implementations
 
             var index = _valuesTokens.Count + 1;
             var parameter = ":p" + index;
-            _valuesTokens.Add(parameter, new Tuple<string, Type>(value.ToString(), value.GetType()));
+            _valuesTokens.Add(parameter, new Tuple<object, Type, Type>(value, value.GetType(), null));
 
             var query = $"size ({key}) {GetLogicalOperator(comparisonType)} {parameter})";
 
@@ -324,9 +330,9 @@ namespace DynORM.Implementations
             return new ReadOnlyDictionary<string, string>(this._namesTokens);
         }
 
-        public IReadOnlyDictionary<string, Tuple<string, Type>> GetValues()
+        public IReadOnlyDictionary<string, Tuple<object, Type, Type>> GetValues()
         {
-            return new ReadOnlyDictionary<string, Tuple<string, Type>>(this._valuesTokens);
+            return new ReadOnlyDictionary<string, Tuple<object, Type, Type>>(this._valuesTokens);
         }
 
 
@@ -336,7 +342,51 @@ namespace DynORM.Implementations
             var left = body.Left;
             var right = body.Right;
             var operationType = body.NodeType;
+            string leftValue = null;
+            string rightValue = null;
+            Tuple<string, PropertyType, Type> member;
+            Tuple<object, Type> value;
+            BinaryExpression binaryExpression;
+
+
+
+            if (MetadataHelper.Instance.TryCastTo(left, out binaryExpression))
+            {
+                leftValue = BuildBinaryExpression(binaryExpression);
+            }
+            else if (left is MemberExpression)
+            {
+                member = GetMemberAccess(left as MemberExpression);
+                leftValue = MapMemberAccess(member);
+            }
+            else if (left is ConstantExpression)
+            {
+                value = GetMemberValue(left as ConstantExpression);
+            }
+
+
+
+
+
+
+            if (MetadataHelper.Instance.TryCastTo(right, out binaryExpression))
+                rightValue = BuildBinaryExpression(binaryExpression);
+
+
             
+            else if(right is MemberExpression)
+                member = GetMemberAccess(right as MemberExpression);
+            else
+                throw new Exception();
+
+
+
+            
+            else if (right is ConstantExpression)
+                value = GetMemberValue(right as ConstantExpression);
+            else
+                throw new Exception();
+
             return GetBinayExpressionValue(left) + " " +
                    GetLogicalOperator(operationType) + " " +
                    GetBinayExpressionValue(right);
@@ -396,38 +446,31 @@ namespace DynORM.Implementations
             }
         }
 
-        private string GetBinayExpressionValue(Expression expression)
+        private Tuple<string, PropertyType, Type> GetMemberAccess(MemberExpression expression)
         {
-            BinaryExpression binaryExpression;
-            if (MetadataHelper.Instance.TryCastTo(expression, out binaryExpression))
-                return BuildBinaryExpression(binaryExpression);
+            var columnName = _propertyHelper.GetColumnName(expression);
+            var columnType = _propertyHelper.GetColumnType(expression);
+            var columnConverter = _propertyHelper.GetColumnConverter(expression);
+            return new Tuple<string, PropertyType, Type>(columnName, columnType, columnConverter);
+        }
+        
+        private Tuple<object, Type> GetMemberValue(ConstantExpression expression)
+        {
+            return new Tuple<object, Type>(expression.Value, expression.Type);
+        }
 
-            if (expression.NodeType == ExpressionType.MemberAccess)
-            {
-                var columnName = _propertyHelper.GetColumnName((MemberExpression)expression);
-                var columnAlias = $"#{columnName}";
-                if (!_namesTokens.ContainsKey(columnAlias))
-                    _namesTokens.Add(columnAlias, columnName);
-                return columnAlias;
-            }
-
-            if (expression.NodeType == ExpressionType.Constant)
-            {
-                var value = (string)(expression as ConstantExpression).Value;
-                var index = _valuesTokens.Count + 1;
-                var token = $":p{index}";
-                _valuesTokens.Add(token, new Tuple<string, Type>(value, typeof(string)));
-                return token;
-            }
-
-            return string.Empty;
+        private string MapMemberAccess(Tuple<string, PropertyType, Type> member)
+        {
+            var alias = "#" + member.Item1;
+            if(!_namesTokens.ContainsKey(alias))
+                _namesTokens.Add(alias, member.Item1);
+            return alias;
         }
 
         private string GetConcatenationValue(FilterConcatenationType concatenationType)
         {
             return concatenationType == FilterConcatenationType.And ? "AND" : "OR";
         }
-
         
     }
 }

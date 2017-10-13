@@ -36,11 +36,12 @@ namespace DynORM.Mappers
         public AttributeValue ToAttributeValue(object value, Type type)
         {
             if (_metadata.IsNumber(type))
-                return new AttributeValue {N = value};
+                return new AttributeValue {N = value.ToString()};
             if (_metadata.IsBoolean(type))
-                return new AttributeValue{ BOOL = Boolean.Parse(value), IsBOOLSet = true};
-            
-            
+                return new AttributeValue{ BOOL = Convert.ToBoolean(value), IsBOOLSet = true};
+
+            return null;
+
         }
     }
 }

@@ -51,10 +51,12 @@ namespace DynORM.Implementations
                 if(!putRequest.ExpressionAttributeNames.ContainsKey(kv.Key))
                     putRequest.ExpressionAttributeNames.Add(kv.Key, kv.Value);
 
+            /*
             putRequest.ExpressionAttributeValues = usable
                 .GetValues()
                 .Select(x => new KeyValuePair<string, AttributeValue>(x.Key, x.Value.Item1))
-                .ToDictionary(x => x)
+                .ToDictionary(x => x);
+                */
             
             var response = await client.PutItemAsync(putRequest);
         }

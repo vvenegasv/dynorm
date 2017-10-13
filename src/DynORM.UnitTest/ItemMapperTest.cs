@@ -11,6 +11,7 @@ namespace DynORM.UnitTest
 {
     public class ItemMapperTest
     {
+        /*
         private readonly ItemMapper _mapper;
 
         public ItemMapperTest()
@@ -24,5 +25,6 @@ namespace DynORM.UnitTest
             var model = PersonFactory.Instance.MakePerson();
             var response = _mapper.ToDictionary(model);
         }
+        */
     }
 }

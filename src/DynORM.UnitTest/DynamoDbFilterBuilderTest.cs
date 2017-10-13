@@ -23,7 +23,7 @@ namespace DynORM.UnitTest
 
             Assert.Equal("#Name = :p1", query);
             Assert.Equal(values?.ContainsKey(":p1"), true);
-            Assert.Equal(values?[":p1"].Key, "some name");
+            Assert.Equal(values?[":p1"].Item1, "some name");
             Assert.Equal(names?.ContainsKey("#Name"), true);
             Assert.Equal(names?["#Name"], "Name");
         }
@@ -42,8 +42,8 @@ namespace DynORM.UnitTest
             Assert.Equal("#Email = :p1 AND #Name = :p2", query);
             Assert.Equal(values?.ContainsKey(":p1"), true);
             Assert.Equal(values?.ContainsKey(":p2"), true);
-            Assert.Equal(values?[":p1"].Key, "n1");
-            Assert.Equal(values?[":p2"].Key, "n2");
+            Assert.Equal(values?[":p1"].Item1, "n1");
+            Assert.Equal(values?[":p2"].Item1, "n2");
             Assert.Equal(names?.ContainsKey("#Email"), true);
             Assert.Equal(names?.ContainsKey("#Name"), true);
             Assert.Equal(names?["#Name"], "Name");
@@ -66,9 +66,9 @@ namespace DynORM.UnitTest
             Assert.Equal(values?.ContainsKey(":p1"), true);
             Assert.Equal(values?.ContainsKey(":p2"), true);
             Assert.Equal(values?.ContainsKey(":p3"), true);
-            Assert.Equal(values?[":p1"].Key, "n1");
-            Assert.Equal(values?[":p2"].Key, "n2");
-            Assert.Equal(values?[":p3"].Key, "123");
+            Assert.Equal(values?[":p1"].Item1, "n1");
+            Assert.Equal(values?[":p2"].Item1, "n2");
+            Assert.Equal(values?[":p3"].Item1, "123");
             Assert.Equal(names?.ContainsKey("#Email"), true);
             Assert.Equal(names?.ContainsKey("#Name"), true);
             Assert.Equal(names?.ContainsKey("#PersonId"), true);
@@ -103,9 +103,9 @@ namespace DynORM.UnitTest
             Assert.Equal(values?.ContainsKey(":p1"), true);
             Assert.Equal(values?.ContainsKey(":p2"), true);
             Assert.Equal(values?.ContainsKey(":p3"), true);
-            Assert.Equal(values?[":p1"].Key, "n1");
-            Assert.Equal(values?[":p2"].Key, "n2");
-            Assert.Equal(values?[":p3"].Key, "123");
+            Assert.Equal(values?[":p1"].Item1, "n1");
+            Assert.Equal(values?[":p2"].Item1, "n2");
+            Assert.Equal(values?[":p3"].Item1, "123");
         }
 
         [Fact]
@@ -124,9 +124,9 @@ namespace DynORM.UnitTest
             Assert.Equal(values?.ContainsKey(":p1"), true);
             Assert.Equal(values?.ContainsKey(":p2"), true);
             Assert.Equal(values?.ContainsKey(":p3"), true);
-            Assert.Equal(values?[":p1"].Key, "n1");
-            Assert.Equal(values?[":p2"].Key, "n2");
-            Assert.Equal(values?[":p3"].Key, "n3");
+            Assert.Equal(values?[":p1"].Item1, "n1");
+            Assert.Equal(values?[":p2"].Item1, "n2");
+            Assert.Equal(values?[":p3"].Item1, "n3");
             Assert.Equal(names?.ContainsKey("#Email"), true);
             Assert.Equal(names?["#Email"], "Email");
         }
@@ -221,7 +221,7 @@ namespace DynORM.UnitTest
             Assert.Equal(names?.ContainsKey("#Email"), true);
             Assert.Equal(names?["#Email"], "Email");
             Assert.Equal(values?.ContainsKey(":p1"), true);
-            Assert.Equal(values?[":p1"].Key, "n1");
+            Assert.Equal(values?[":p1"].Item1, "n1");
         }
 
         [Fact]
@@ -242,7 +242,7 @@ namespace DynORM.UnitTest
             Assert.Equal(names?.ContainsKey("#Email"), true);
             Assert.Equal(names?["#Email"], "Email");
             Assert.Equal(values?.ContainsKey(":p1"), true);
-            Assert.Equal(values?[":p1"].Key, "n1");
+            Assert.Equal(values?[":p1"].Item1, "n1");
         }
 
         [Fact]
@@ -263,7 +263,7 @@ namespace DynORM.UnitTest
             Assert.Equal(names?.ContainsKey("#Email"), true);
             Assert.Equal(names?["#Email"], "Email");
             Assert.Equal(values?.ContainsKey(":p1"), true);
-            Assert.Equal(values?[":p1"].Key, 20);
+            Assert.Equal(values?[":p1"].Item1, 20);
         }
 
         [Fact]

@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.Text;
 using Amazon.DynamoDBv2.DataModel;
+using DynORM.UnitTest.Common;
 
 namespace DynORM.UnitTest.Models
 {
     [DynamoDBTable("Test-PersonModel")]
     internal class PersonModel
     {
-        [DynamoDBHashKey()]
+        [DynamoDBHashKey(typeof(DateConverter))]
         public string PersonId { get; set; }
         
         [DynamoDBProperty]
