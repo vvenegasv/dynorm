@@ -14,6 +14,7 @@ namespace DynORM.Implementations
     public class DynamoDbFilterBuilder<TModel> : IFilterUsable, IFilterable<TModel> where TModel : class
     {
         private readonly PropertyHelper _propertyHelper;
+        private readonly MetadataHelper _metadataHelper;
 
         /// <summary>
         /// Dictionary Key=Parameter, Value=Tuple[Object Value, Destination Type, Convert Type]
@@ -26,15 +27,20 @@ namespace DynORM.Implementations
         public DynamoDbFilterBuilder() : base()
         {
             _propertyHelper = PropertyHelper.Instance;
+            _metadataHelper = MetadataHelper.Instance;
             _filters = new List<string>();
             _namesTokens = new Dictionary<string, string>();
-            _valuesTokens = new Dictionary<string, Tuple<object, Type, Type>>();
+            _valuesTokens = new Dictionary<string, Tuple<object, PropertyType, Type>>();
         }
 
         public DynamoDbFilterBuilder(string filter)
         {
+            _propertyHelper = PropertyHelper.Instance;
+            _metadataHelper = MetadataHelper.Instance;
             _filters = new List<string>();
             _filters.Add(filter);
+            _namesTokens = new Dictionary<string, string>();
+            _valuesTokens = new Dictionary<string, Tuple<object, PropertyType, Type>>();
         }
 
 
@@ -129,7 +135,7 @@ namespace DynORM.Implementations
                 var index = _valuesTokens.Count + 1;
                 var param = ":p" + index;
                 parameters.Add(param);
-                _valuesTokens.Add(param, new Tuple<object, Type, Type>(val, val.GetType(), null));
+                _valuesTokens.Add(param, new Tuple<object, PropertyType, Type>(val, GetPropertyType(val.GetType()), null));
             }
 
             filter += string.Join(", ", parameters);
@@ -243,7 +249,7 @@ namespace DynORM.Implementations
 
             var index = _valuesTokens.Count + 1;
             var parameter = ":p" + index;
-            _valuesTokens.Add(parameter, new Tuple<object, Type, Type>(substring, substring.GetType(), null));
+            _valuesTokens.Add(parameter, new Tuple<object, PropertyType, Type>(substring, PropertyType.String, null));
 
             if (_filters.Any())
                 _filters.Add($"{GetConcatenationValue(concatenationType)} begins_with ({key}, {parameter})");
@@ -271,7 +277,7 @@ namespace DynORM.Implementations
 
             var index = _valuesTokens.Count + 1;
             var parameter = ":p" + index;
-            _valuesTokens.Add(parameter, new Tuple<object, Type, Type>(target, target.GetType(), null));
+            _valuesTokens.Add(parameter, new Tuple<object, PropertyType, Type>(target, GetPropertyType(target.GetType()), null));
 
             var query = $"contains ({key}, {parameter})";
 
@@ -301,7 +307,7 @@ namespace DynORM.Implementations
 
             var index = _valuesTokens.Count + 1;
             var parameter = ":p" + index;
-            _valuesTokens.Add(parameter, new Tuple<object, Type, Type>(value, value.GetType(), null));
+            _valuesTokens.Add(parameter, new Tuple<object, PropertyType, Type>(value, GetPropertyType(value.GetType()), null));
 
             var query = $"size ({key}) {GetLogicalOperator(comparisonType)} {parameter})";
 
@@ -330,9 +336,9 @@ namespace DynORM.Implementations
             return new ReadOnlyDictionary<string, string>(this._namesTokens);
         }
 
-        public IReadOnlyDictionary<string, Tuple<object, Type, Type>> GetValues()
+        public IReadOnlyDictionary<string, Tuple<object, PropertyType, Type>> GetValues()
         {
-            return new ReadOnlyDictionary<string, Tuple<object, Type, Type>>(this._valuesTokens);
+            return new ReadOnlyDictionary<string, Tuple<object, PropertyType, Type>>(this._valuesTokens);
         }
 
 
@@ -342,48 +348,65 @@ namespace DynORM.Implementations
             var left = body.Left;
             var right = body.Right;
             var operationType = body.NodeType;
-            string leftValue = null;
-            string rightValue = null;
+            string leftStringExpression = null;
+            string rightStringExpression = null;
             Tuple<string, PropertyType, Type> member;
-            Tuple<object, Type> value;
+            Tuple<object, Type> leftValue = null;
+            Tuple<object, Type> rightValue = null;
             BinaryExpression binaryExpression;
-
-
+            
 
             if (MetadataHelper.Instance.TryCastTo(left, out binaryExpression))
             {
-                leftValue = BuildBinaryExpression(binaryExpression);
+                leftStringExpression = BuildBinaryExpression(binaryExpression);
             }
             else if (left is MemberExpression)
             {
                 member = GetMemberAccess(left as MemberExpression);
-                leftValue = MapMemberAccess(member);
+                leftStringExpression = MapMemberAccess(member);
             }
             else if (left is ConstantExpression)
             {
-                value = GetMemberValue(left as ConstantExpression);
+                leftValue = GetMemberValue(left as ConstantExpression);
+            }
+
+            
+
+            if (MetadataHelper.Instance.TryCastTo(right, out binaryExpression))
+            {
+                rightStringExpression = BuildBinaryExpression(binaryExpression);
+            }
+            else if (right is MemberExpression)
+            {
+                member = GetMemberAccess(right as MemberExpression);
+                rightStringExpression = MapMemberAccess(member);
+            }
+            else if (left is ConstantExpression)
+            {
+                rightValue = GetMemberValue(right as ConstantExpression);
             }
 
 
+            if (left is ConstantExpression || right is ConstantExpression)
+            {
+                if (left is MemberExpression)
+                {
+                    var index = _valuesTokens.Count + 1;
+                    _valuesTokens.Add(":p" + index, new Tuple<object, PropertyType, Type>(rightValue.Item1, GetPropertyType(rightValue.Item2), null));
+                }
+                else if (right is MemberExpression)
+                {
+                    
+                }
+                if (left is ConstantExpression && right is ConstantExpression)
+                {
+                    throw new ExpressionNotSupportedException($"The expression {body} has only constant. It need to has at least one MemberExpression");
+                }
+            }
 
 
-
-
-            if (MetadataHelper.Instance.TryCastTo(right, out binaryExpression))
-                rightValue = BuildBinaryExpression(binaryExpression);
-
-
-            
-            else if(right is MemberExpression)
-                member = GetMemberAccess(right as MemberExpression);
-            else
-                throw new Exception();
-
-
-
-            
             else if (right is ConstantExpression)
-                value = GetMemberValue(right as ConstantExpression);
+                leftValue = GetMemberValue(right as ConstantExpression);
             else
                 throw new Exception();
 
@@ -466,11 +489,20 @@ namespace DynORM.Implementations
                 _namesTokens.Add(alias, member.Item1);
             return alias;
         }
-
+        
         private string GetConcatenationValue(FilterConcatenationType concatenationType)
         {
             return concatenationType == FilterConcatenationType.And ? "AND" : "OR";
         }
-        
+
+        private PropertyType GetPropertyType(Type type)
+        {
+            if(_metadataHelper.IsNumber(type))
+                return PropertyType.Number;
+            if(_metadataHelper.IsBoolean(type))
+                return PropertyType.Boolean;
+            return PropertyType.String;
+        }
+
     }
 }

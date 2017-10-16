@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using DynORM.Models;
 
 namespace DynORM.Interfaces
 {
@@ -21,6 +22,6 @@ namespace DynORM.Interfaces
         /// Get parameter values
         /// </summary>
         /// <returns>Dictionary with parameter values</returns>
-        IReadOnlyDictionary<string, Tuple<object, Type, Type>> GetValues();
+        IReadOnlyDictionary<string, Tuple<object, PropertyType, Type>> GetValues();
     }
 }
