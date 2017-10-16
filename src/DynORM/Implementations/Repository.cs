@@ -16,13 +16,13 @@ namespace DynORM.Implementations
     {
         private readonly AWSCredentials _credentials;
         private readonly RegionEndpoint _endpoint;
-        private readonly PropertyHelper _propertyHelper;
+        private readonly ItemHelper _itemHelper;
 
         internal Repository(AWSCredentials credentials, RegionEndpoint endpoint)
         {
             _credentials = credentials;
             _endpoint = endpoint;
-            _propertyHelper = PropertyHelper.Instance;
+            _itemHelper = ItemHelper.Instance;
         }
 
         public bool IsConsistentRead { get; set; }

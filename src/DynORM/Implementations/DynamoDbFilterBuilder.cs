@@ -13,7 +13,7 @@ namespace DynORM.Implementations
 {
     public class DynamoDbFilterBuilder<TModel> : IFilterUsable, IFilterable<TModel> where TModel : class
     {
-        private readonly PropertyHelper _propertyHelper;
+        private readonly ItemHelper _itemHelper;
         private readonly MetadataHelper _metadataHelper;
 
         /// <summary>
@@ -26,7 +26,7 @@ namespace DynORM.Implementations
 
         public DynamoDbFilterBuilder() : base()
         {
-            _propertyHelper = PropertyHelper.Instance;
+            _itemHelper = ItemHelper.Instance;
             _metadataHelper = MetadataHelper.Instance;
             _filters = new List<string>();
             _namesTokens = new Dictionary<string, string>();
@@ -35,7 +35,7 @@ namespace DynORM.Implementations
 
         public DynamoDbFilterBuilder(string filter)
         {
-            _propertyHelper = PropertyHelper.Instance;
+            _itemHelper = ItemHelper.Instance;
             _metadataHelper = MetadataHelper.Instance;
             _filters = new List<string>();
             _filters.Add(filter);
@@ -105,12 +105,12 @@ namespace DynORM.Implementations
             return this;
         }
 
-        public IFilterable<TModel> WhereIn<TValue>(Expression<Func<TModel, TValue>> property, IEnumerable<TValue> values) where TValue : class
+        public IFilterable<TModel> WhereIn<TValue>(Expression<Func<TModel, TValue>> property, IEnumerable<TValue> values)
         {
             return WhereIn(property, values, FilterConcatenationType.And);
         }
 
-        public IFilterable<TModel> WhereIn<TValue>(Expression<Func<TModel, TValue>> property, IEnumerable<TValue> values, FilterConcatenationType concatenationType) where TValue : class
+        public IFilterable<TModel> WhereIn<TValue>(Expression<Func<TModel, TValue>> property, IEnumerable<TValue> values, FilterConcatenationType concatenationType)
         {
             if (property?.NodeType != ExpressionType.Lambda)
                 throw new ExpressionNotSupportedException($"Expression {property} is unsupported");
@@ -122,7 +122,7 @@ namespace DynORM.Implementations
             string filter = string.Empty;
             if (_filters.Any())
                 filter = GetConcatenationValue(concatenationType);
-            var columnName = _propertyHelper.GetColumnName(memberExpression);
+            var columnName = _itemHelper.GetColumnName(memberExpression);
             var columnAlias = "#" + columnName;
             if (!_namesTokens.ContainsKey(columnAlias))
                 _namesTokens.Add(columnAlias, columnName);
@@ -135,7 +135,7 @@ namespace DynORM.Implementations
                 var index = _valuesTokens.Count + 1;
                 var param = ":p" + index;
                 parameters.Add(param);
-                _valuesTokens.Add(param, new Tuple<object, PropertyType, Type>(val, GetPropertyType(val.GetType()), null));
+                _valuesTokens.Add(param, new Tuple<object, PropertyType, Type>(val, _itemHelper.GetColumnType(memberExpression), _itemHelper.GetColumnConverter(memberExpression)));
             }
 
             filter += string.Join(", ", parameters);
@@ -156,7 +156,7 @@ namespace DynORM.Implementations
             if (memberExpression == null)
                 throw new ExpressionNotSupportedException($"Expression {property} is unsupported");
 
-            var name = _propertyHelper.GetColumnName(memberExpression);
+            var name = _itemHelper.GetColumnName(memberExpression);
             var key = "#" + name;
             if (!_namesTokens.ContainsKey(key))
                 _namesTokens.Add(key, name);
@@ -199,7 +199,7 @@ namespace DynORM.Implementations
             if (memberExpression == null)
                 throw new ExpressionNotSupportedException($"Expression {property} is unsupported");
 
-            var name = _propertyHelper.GetColumnName(memberExpression);
+            var name = _itemHelper.GetColumnName(memberExpression);
             var key = "#" + name;
             if (!_namesTokens.ContainsKey(key))
                 _namesTokens.Add(key, name);
@@ -231,18 +231,18 @@ namespace DynORM.Implementations
             return this;
         }
 
-        public IFilterable<TModel> WhereBeginsWith<TValue>(Expression<Func<TModel, TValue>> property, string substring) where TValue : class
+        public IFilterable<TModel> WhereBeginsWith<TValue>(Expression<Func<TModel, TValue>> property, string substring)
         {
             return WhereBeginsWith(property, substring, FilterConcatenationType.And);
         }
 
-        public IFilterable<TModel> WhereBeginsWith<TValue>(Expression<Func<TModel, TValue>> property, string substring, FilterConcatenationType concatenationType) where TValue : class
+        public IFilterable<TModel> WhereBeginsWith<TValue>(Expression<Func<TModel, TValue>> property, string substring, FilterConcatenationType concatenationType)
         {
             var memberExpression = property.Body as MemberExpression;
             if (memberExpression == null)
                 throw new ExpressionNotSupportedException($"Expression {property} is unsupported");
 
-            var name = _propertyHelper.GetColumnName(memberExpression);
+            var name = _itemHelper.GetColumnName(memberExpression);
             var key = "#" + name;
             if (!_namesTokens.ContainsKey(key))
                 _namesTokens.Add(key, name);
@@ -270,7 +270,7 @@ namespace DynORM.Implementations
             if (memberExpression == null)
                 throw new ExpressionNotSupportedException($"Expression {property} is unsupported");
 
-            var name = _propertyHelper.GetColumnName(memberExpression);
+            var name = _itemHelper.GetColumnName(memberExpression);
             var key = "#" + name;
             if (!_namesTokens.ContainsKey(key))
                 _namesTokens.Add(key, name);
@@ -300,7 +300,7 @@ namespace DynORM.Implementations
             if (memberExpression == null)
                 throw new ExpressionNotSupportedException($"Expression {property} is unsupported");
 
-            var name = _propertyHelper.GetColumnName(memberExpression);
+            var name = _itemHelper.GetColumnName(memberExpression);
             var key = "#" + name;
             if (!_namesTokens.ContainsKey(key))
                 _namesTokens.Add(key, name);
@@ -342,7 +342,11 @@ namespace DynORM.Implementations
         }
 
 
-
+        /// <summary>
+        /// Get a dynamodb query string for the given expression
+        /// </summary>
+        /// <param name="body">Expression that refers to a boolean operation</param>
+        /// <returns>Dynamodb query string for the given expression</returns>
         private string BuildBinaryExpression(BinaryExpression body)
         {
             var left = body.Left;
@@ -350,71 +354,111 @@ namespace DynORM.Implementations
             var operationType = body.NodeType;
             string leftStringExpression = null;
             string rightStringExpression = null;
-            Tuple<string, PropertyType, Type> member;
-            Tuple<object, Type> leftValue = null;
-            Tuple<object, Type> rightValue = null;
+            Tuple<string, PropertyType, Type> leftMember = null;
+            Tuple<string, PropertyType, Type> rightMember = null;
+            object leftValue = null;
+            object rightValue = null;
             BinaryExpression binaryExpression;
             
-
+            //Get left expression
             if (MetadataHelper.Instance.TryCastTo(left, out binaryExpression))
             {
                 leftStringExpression = BuildBinaryExpression(binaryExpression);
             }
             else if (left is MemberExpression)
             {
-                member = GetMemberAccess(left as MemberExpression);
-                leftStringExpression = MapMemberAccess(member);
+                var memberExpression = left as MemberExpression;
+                if (memberExpression.Expression.NodeType == ExpressionType.Parameter)
+                {
+                    leftMember = GetMemberInfo(memberExpression);
+                    leftStringExpression = MapMemberInfo(leftMember);
+                }
+                else if (memberExpression.Expression.NodeType == ExpressionType.Constant)
+                {
+                    leftValue = GetMemberValue(memberExpression);
+                }
+                else
+                {
+                    throw new ExpressionNotSupportedException($"The expression '{memberExpression}' cannot be resolved");
+                }
             }
             else if (left is ConstantExpression)
             {
                 leftValue = GetMemberValue(left as ConstantExpression);
             }
+            else
+            {
+                throw new ExpressionNotSupportedException($"Left expression {left}, is not supported. It need to be one of these: MemberExpression or ConstantExpression.");
+            }
 
             
-
+            //Get right expression
             if (MetadataHelper.Instance.TryCastTo(right, out binaryExpression))
             {
                 rightStringExpression = BuildBinaryExpression(binaryExpression);
             }
             else if (right is MemberExpression)
             {
-                member = GetMemberAccess(right as MemberExpression);
-                rightStringExpression = MapMemberAccess(member);
+                var memberExpression = right as MemberExpression;
+                if (memberExpression.Expression.NodeType == ExpressionType.Parameter)
+                {
+                    rightMember = GetMemberInfo(memberExpression);
+                    rightStringExpression = MapMemberInfo(leftMember);
+                }
+                else if (memberExpression.Expression.NodeType == ExpressionType.Constant)
+                {
+                    rightValue = GetMemberValue(memberExpression);
+                }
+                else
+                {
+                    throw new ExpressionNotSupportedException($"The expression '{memberExpression}' cannot be resolved");
+                }
             }
-            else if (left is ConstantExpression)
+            else if (right is ConstantExpression)
             {
                 rightValue = GetMemberValue(right as ConstantExpression);
             }
-
-
-            if (left is ConstantExpression || right is ConstantExpression)
+            else
             {
-                if (left is MemberExpression)
+                throw new ExpressionNotSupportedException($"Right expression {right}, is not supported. It need to be one of these: MemberExpression or ConstantExpression.");
+            }
+
+
+            // Get converter from left or right and make the value item
+            if (leftValue != null || rightValue != null)
+            {
+                if (leftValue == null)
                 {
-                    var index = _valuesTokens.Count + 1;
-                    _valuesTokens.Add(":p" + index, new Tuple<object, PropertyType, Type>(rightValue.Item1, GetPropertyType(rightValue.Item2), null));
+                    rightStringExpression = MapMemberValue(rightValue, leftMember.Item2, leftMember.Item3);
                 }
-                else if (right is MemberExpression)
+                else if (rightValue == null)
                 {
-                    
+                    leftStringExpression = MapMemberValue(leftValue, rightMember.Item2, rightMember.Item3);
                 }
-                if (left is ConstantExpression && right is ConstantExpression)
+                else
                 {
                     throw new ExpressionNotSupportedException($"The expression {body} has only constant. It need to has at least one MemberExpression");
                 }
             }
 
-
-            else if (right is ConstantExpression)
-                leftValue = GetMemberValue(right as ConstantExpression);
-            else
-                throw new Exception();
-
-            return GetBinayExpressionValue(left) + " " +
+            if (body.NodeType == ExpressionType.AndAlso || body.NodeType == ExpressionType.OrElse)
+            {
+                if(leftStringExpression.Contains(" OR ") || leftStringExpression.Contains(" AND "))
+                    leftStringExpression = $"({leftStringExpression})";
+                if (rightStringExpression.Contains(" OR ") || rightStringExpression.Contains(" AND "))
+                    rightStringExpression = $"({rightStringExpression})";
+            }
+            
+            return leftStringExpression + " " +
                    GetLogicalOperator(operationType) + " " +
-                   GetBinayExpressionValue(right);
+                   rightStringExpression;
         }
 
+        /// <summary>
+        /// Get a logical operator string for the given expression type
+        /// </summary>
+        /// <param name="expressionType">Expression logical operator</param>
+        /// <returns>String for the given expression type</returns>
         private string GetLogicalOperator(ExpressionType expressionType)
         {
             switch (expressionType)
@@ -424,6 +468,8 @@ namespace DynORM.Implementations
                 case ExpressionType.AndAlso:
                     return "AND";
                 case ExpressionType.Or:
+                    return "OR";
+                case ExpressionType.OrElse:
                     return "OR";
                 case ExpressionType.Not:
                     return "NOT";
@@ -448,6 +494,11 @@ namespace DynORM.Implementations
             }
         }
 
+        /// <summary>
+        /// Get a logical operator string for the given comparison type
+        /// </summary>
+        /// <param name="comparisonType">Logical operator</param>
+        /// <returns>string for the given comparison type</returns>
         private string GetLogicalOperator(ComparisonType comparisonType)
         {
             switch (comparisonType)
@@ -469,32 +520,82 @@ namespace DynORM.Implementations
             }
         }
 
-        private Tuple<string, PropertyType, Type> GetMemberAccess(MemberExpression expression)
+        /// <summary>
+        /// Get the member information as Tuple --> Item1=ColumnName, Item2=ColumnType, Item3=ColumnConverter
+        /// </summary>
+        /// <param name="expression">Expression that point to a property</param>
+        /// <returns>Tuple Item1=ColumnName, Item2=ColumnType, Item3=ColumnConverter</returns>
+        private Tuple<string, PropertyType, Type> GetMemberInfo(MemberExpression expression)
         {
-            var columnName = _propertyHelper.GetColumnName(expression);
-            var columnType = _propertyHelper.GetColumnType(expression);
-            var columnConverter = _propertyHelper.GetColumnConverter(expression);
+            var columnName = _itemHelper.GetColumnName(expression);
+            var columnType = _itemHelper.GetColumnType(expression);
+            var columnConverter = _itemHelper.GetColumnConverter(expression);
             return new Tuple<string, PropertyType, Type>(columnName, columnType, columnConverter);
         }
         
-        private Tuple<object, Type> GetMemberValue(ConstantExpression expression)
+        /// <summary>
+        /// Get the expression value
+        /// </summary>
+        /// <param name="expression">ConstantExpression with object value</param>
+        /// <returns>Object value</returns>
+        private object GetMemberValue(ConstantExpression expression)
         {
-            return new Tuple<object, Type>(expression.Value, expression.Type);
+            return expression.Value;
         }
 
-        private string MapMemberAccess(Tuple<string, PropertyType, Type> member)
+        /// <summary>
+        /// Get the expression value
+        /// </summary>
+        /// <param name="expression">MemberExpression with object value</param>
+        /// <returns>Object value</returns>
+        private object GetMemberValue(MemberExpression expression)
+        {
+            return Expression.Lambda(expression).Compile().DynamicInvoke();
+        }
+
+        /// <summary>
+        /// Get alias for a member information as Tuple
+        /// </summary>
+        /// <param name="member">Tuple Item1=ColumnName, Item2=PropertyType, Item3=ConverterType</param>
+        /// <returns>Alias for current member</returns>
+        private string MapMemberInfo(Tuple<string, PropertyType, Type> member)
         {
             var alias = "#" + member.Item1;
             if(!_namesTokens.ContainsKey(alias))
                 _namesTokens.Add(alias, member.Item1);
             return alias;
         }
-        
+
+        /// <summary>
+        /// Get parameter for a member value
+        /// </summary>
+        /// <param name="value">Member value</param>
+        /// <param name="propertyType">Property type that is access</param>
+        /// <param name="converter">Converter</param>
+        /// <returns></returns>
+        private string MapMemberValue(object value, PropertyType propertyType, Type converter)
+        {
+            var index = _valuesTokens.Count + 1;
+            var key = ":p" + index;
+            _valuesTokens.Add(key, new Tuple<object, PropertyType, Type>(value, propertyType, converter));
+            return key;
+        }
+
+        /// <summary>
+        /// Gets the logical concatenador string 
+        /// </summary>
+        /// <param name="concatenationType">Logical concatenador</param>
+        /// <returns>String for the current logical concatenador</returns>
         private string GetConcatenationValue(FilterConcatenationType concatenationType)
         {
             return concatenationType == FilterConcatenationType.And ? "AND" : "OR";
         }
 
+        /// <summary>
+        /// Gets the DynamoDB type for the current property type
+        /// </summary>
+        /// <param name="type">Property type</param>
+        /// <returns>DynamoDB property type</returns>
         private PropertyType GetPropertyType(Type type)
         {
             if(_metadataHelper.IsNumber(type))

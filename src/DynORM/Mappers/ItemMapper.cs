@@ -14,14 +14,14 @@ namespace DynORM.Mappers
     internal class ItemMapper<TItem> where TItem : class
     {
         private readonly MetadataHelper _metadata;
-        private readonly PropertyHelper _propertyHelper;
+        private readonly ItemHelper _itemHelper;
         private readonly Dictionary<string, string> _names;
         private readonly TItem _item;
         
         public ItemMapper(TItem item)
         {
             _item = item;
-            _propertyHelper = PropertyHelper.Instance;
+            _itemHelper = ItemHelper.Instance;
             _metadata = MetadataHelper.Instance;
             _names = new Dictionary<string, string>();
         }
@@ -30,7 +30,7 @@ namespace DynORM.Mappers
         {
             return new PutItemRequest
             {
-                TableName = _propertyHelper.GetTableName(_item),
+                TableName = _itemHelper.GetTableName(_item),
                 Item = ToDictionary(_item),
                 ExpressionAttributeNames = _names
             };

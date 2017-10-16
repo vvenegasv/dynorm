@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using Amazon.DynamoDBv2.DataModel;
@@ -11,18 +12,18 @@ using DynORM.Models;
 
 namespace DynORM.Helpers
 {
-    internal class PropertyHelper
+    internal class ItemHelper
     {
-        private static volatile PropertyHelper _instance;
+        private static volatile ItemHelper _instance;
         private static object _syncRoot = new Object();
         private readonly MetadataHelper _metadata;
 
-        private PropertyHelper()
+        private ItemHelper()
         {
             _metadata = MetadataHelper.Instance;
         }
 
-        public static PropertyHelper Instance
+        public static ItemHelper Instance
         {
             get
             {
@@ -31,7 +32,7 @@ namespace DynORM.Helpers
                     lock (_syncRoot)
                     {
                         if (_instance == null)
-                            _instance = new PropertyHelper();
+                            _instance = new ItemHelper();
                     }
                 }
                 return _instance;
@@ -46,15 +47,15 @@ namespace DynORM.Helpers
             var dynGsiHashProp = member.GetCustomAttribute<DynamoDBGlobalSecondaryIndexHashKeyAttribute>();
             var dynGsiRangeProp = member.GetCustomAttribute<DynamoDBGlobalSecondaryIndexRangeKeyAttribute>();
 
-            if (dynProp.Converter != null)
+            if (!string.IsNullOrWhiteSpace(dynProp?.AttributeName))
                 return dynProp.AttributeName;
-            if (dynHashProp.Converter != null)
+            if (!string.IsNullOrWhiteSpace(dynHashProp?.AttributeName))
                 return dynHashProp.AttributeName;
-            if (dynRangeProp.Converter != null)
+            if (!string.IsNullOrWhiteSpace(dynRangeProp?.AttributeName))
                 return dynRangeProp.AttributeName;
-            if (dynGsiHashProp.Converter != null)
+            if (!string.IsNullOrWhiteSpace(dynGsiHashProp?.AttributeName))
                 return dynGsiHashProp.AttributeName;
-            if (dynGsiRangeProp.Converter != null)
+            if (!string.IsNullOrWhiteSpace(dynGsiRangeProp?.AttributeName))
                 return dynGsiRangeProp.AttributeName;
             return member.Name;
         }
@@ -62,7 +63,7 @@ namespace DynORM.Helpers
         public string GetColumnName(MemberExpression property)
         {
             if(property?.NodeType != ExpressionType.MemberAccess)
-                throw new ExpressionNotSupportedException($"Expression {property} is unsupported");
+                throw new ExpressionNotSupportedException($"Expression '{property}' not refers to a valid property");
 
             var memberInfo = property.Member;
             return GetColumnName(memberInfo);
@@ -71,7 +72,7 @@ namespace DynORM.Helpers
         public Type GetColumnConverter(MemberExpression property)
         {
             if (property?.NodeType != ExpressionType.MemberAccess)
-                throw new ExpressionNotSupportedException($"Expression {property} is unsupported");
+                throw new ExpressionNotSupportedException($"Expression '{property}' not refers to a valid property");
 
             var memberInfo = property.Member;
 
@@ -80,18 +81,26 @@ namespace DynORM.Helpers
             var dynRangeProp = memberInfo.GetCustomAttribute<DynamoDBRangeKeyAttribute>();
             var dynGsiHashProp = memberInfo.GetCustomAttribute<DynamoDBGlobalSecondaryIndexHashKeyAttribute>();
             var dynGsiRangeProp = memberInfo.GetCustomAttribute<DynamoDBGlobalSecondaryIndexRangeKeyAttribute>();
+            Type converter = null;
 
-            if (dynProp.Converter != null)
-                return dynProp.Converter;
-            if (dynHashProp.Converter != null)
-                return dynHashProp.Converter;
-            if (dynRangeProp.Converter != null)
-                return dynRangeProp.Converter;
-            if (dynGsiHashProp.Converter != null)
-                return dynGsiHashProp.Converter;
-            if (dynGsiRangeProp.Converter != null)
-                return dynGsiRangeProp.Converter;
-            return null;
+            if (dynProp?.Converter != null)
+                converter = dynProp.Converter;
+            if (dynHashProp?.Converter != null)
+                converter = dynHashProp.Converter;
+            if (dynRangeProp?.Converter != null)
+                converter = dynRangeProp.Converter;
+            if (dynGsiHashProp?.Converter != null)
+                converter = dynGsiHashProp.Converter;
+            if (dynGsiRangeProp?.Converter != null)
+                converter = dynGsiRangeProp.Converter;
+
+            if (converter == null)
+                return converter;
+
+            if (converter.GetTypeInfo().ImplementedInterfaces?.All(x => x != typeof(IPropertyConverter)) ?? true)
+                throw new InvalidConverter($"The converter type '{converter}' not implements 'IPropertyConverter' interface");
+
+            return converter;
         }
 
         public PropertyType GetColumnType(MemberExpression property)

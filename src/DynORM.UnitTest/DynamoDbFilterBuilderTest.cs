@@ -5,6 +5,8 @@ using DynORM.Enums;
 using DynORM.Exceptions;
 using DynORM.Implementations;
 using DynORM.Interfaces;
+using DynORM.Models;
+using DynORM.UnitTest.Common;
 using DynORM.UnitTest.Models;
 using Xunit;
 
@@ -24,6 +26,8 @@ namespace DynORM.UnitTest
             Assert.Equal("#Name = :p1", query);
             Assert.Equal(values?.ContainsKey(":p1"), true);
             Assert.Equal(values?[":p1"].Item1, "some name");
+            Assert.Equal(values?[":p1"].Item2, PropertyType.String);
+            Assert.Equal(values?[":p1"].Item3, null);
             Assert.Equal(names?.ContainsKey("#Name"), true);
             Assert.Equal(names?["#Name"], "Name");
         }
@@ -43,7 +47,11 @@ namespace DynORM.UnitTest
             Assert.Equal(values?.ContainsKey(":p1"), true);
             Assert.Equal(values?.ContainsKey(":p2"), true);
             Assert.Equal(values?[":p1"].Item1, "n1");
+            Assert.Equal(values?[":p1"].Item2, PropertyType.String);
+            Assert.Equal(values?[":p1"].Item3, null);
             Assert.Equal(values?[":p2"].Item1, "n2");
+            Assert.Equal(values?[":p2"].Item2, PropertyType.String);
+            Assert.Equal(values?[":p2"].Item3, null);
             Assert.Equal(names?.ContainsKey("#Email"), true);
             Assert.Equal(names?.ContainsKey("#Name"), true);
             Assert.Equal(names?["#Name"], "Name");
@@ -56,33 +64,108 @@ namespace DynORM.UnitTest
             IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
             var compiledFilter = builder
                 .Where(x => x.Email == "n1" && x.Name == "n2")
-                .Where(x => x.PersonId == "123", FilterConcatenationType.Or)
+                .Where(x => x.Age < 40, FilterConcatenationType.Or)
                 .Build();
             var query = compiledFilter.GetQuery();
             var values = compiledFilter.GetValues();
             var names = compiledFilter.GetNames();
 
-            Assert.Equal("#Email = :p1 AND #Name = :p2 OR #PersonId = :p3", query);
+            Assert.Equal("#Email = :p1 AND #Name = :p2 OR #UserAge < :p3", query);
             Assert.Equal(values?.ContainsKey(":p1"), true);
             Assert.Equal(values?.ContainsKey(":p2"), true);
             Assert.Equal(values?.ContainsKey(":p3"), true);
             Assert.Equal(values?[":p1"].Item1, "n1");
+            Assert.Equal(values?[":p1"].Item2, PropertyType.String);
+            Assert.Equal(values?[":p1"].Item3, null);
             Assert.Equal(values?[":p2"].Item1, "n2");
-            Assert.Equal(values?[":p3"].Item1, "123");
+            Assert.Equal(values?[":p2"].Item2, PropertyType.String);
+            Assert.Equal(values?[":p2"].Item3, null);
+            Assert.Equal(values?[":p3"].Item1, 40);
+            Assert.Equal(values?[":p3"].Item2, PropertyType.String);
+            Assert.Equal(values?[":p3"].Item3, null);
             Assert.Equal(names?.ContainsKey("#Email"), true);
             Assert.Equal(names?.ContainsKey("#Name"), true);
-            Assert.Equal(names?.ContainsKey("#PersonId"), true);
+            Assert.Equal(names?.ContainsKey("#UserAge"), true);
             Assert.Equal(names?["#Name"], "Name");
             Assert.Equal(names?["#Email"], "Email");
-            Assert.Equal(names?["#PersonId"], "PersonId");
+            Assert.Equal(names?["#UserAge"], "UserAge");
+        }
+
+        [Fact]
+        public void BigWhere()
+        {
+            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            var compiledFilter = builder
+                .Where(x => x.Email == "n1" && (x.Name == "n2" || x.Age < 40))
+                .Build();
+            var query = compiledFilter.GetQuery();
+            var values = compiledFilter.GetValues();
+            var names = compiledFilter.GetNames();
+
+            Assert.Equal("#Email = :p1 AND (#Name = :p2 OR #UserAge < :p3)", query);
+            Assert.Equal(values?.ContainsKey(":p1"), true);
+            Assert.Equal(values?.ContainsKey(":p2"), true);
+            Assert.Equal(values?.ContainsKey(":p3"), true);
+            Assert.Equal(values?[":p1"].Item1, "n1");
+            Assert.Equal(values?[":p1"].Item2, PropertyType.String);
+            Assert.Equal(values?[":p1"].Item3, null);
+            Assert.Equal(values?[":p2"].Item1, "n2");
+            Assert.Equal(values?[":p2"].Item2, PropertyType.String);
+            Assert.Equal(values?[":p2"].Item3, null);
+            Assert.Equal(values?[":p3"].Item1, 40);
+            Assert.Equal(values?[":p3"].Item2, PropertyType.String);
+            Assert.Equal(values?[":p3"].Item3, null);
+            Assert.Equal(names?.ContainsKey("#Email"), true);
+            Assert.Equal(names?.ContainsKey("#Name"), true);
+            Assert.Equal(names?.ContainsKey("#UserAge"), true);
+            Assert.Equal(names?["#Name"], "Name");
+            Assert.Equal(names?["#Email"], "Email");
+            Assert.Equal(names?["#UserAge"], "UserAge");
+        }
+
+        [Fact]
+        public void BigWhereWithTwoParentesis()
+        {
+            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            var compiledFilter = builder
+                .Where(x => (x.Email == "n1" && x.Name == "n2") || (x.Age < 40 && x.PersonId == "123"))
+                .Build();
+            var query = compiledFilter.GetQuery();
+            var values = compiledFilter.GetValues();
+            var names = compiledFilter.GetNames();
+
+            Assert.Equal("(#Email = :p1 AND #Name = :p2) OR (#UserAge < :p3 AND #PersonId = :p4)", query);
+            Assert.Equal(values?.ContainsKey(":p1"), true);
+            Assert.Equal(values?.ContainsKey(":p2"), true);
+            Assert.Equal(values?.ContainsKey(":p3"), true);
+            Assert.Equal(values?.ContainsKey(":p4"), true);
+            Assert.Equal(values?[":p1"].Item1, "n1");
+            Assert.Equal(values?[":p1"].Item2, PropertyType.String);
+            Assert.Equal(values?[":p1"].Item3, null);
+            Assert.Equal(values?[":p2"].Item1, "n2");
+            Assert.Equal(values?[":p2"].Item2, PropertyType.String);
+            Assert.Equal(values?[":p2"].Item3, null);
+            Assert.Equal(values?[":p3"].Item1, 40);
+            Assert.Equal(values?[":p3"].Item2, PropertyType.String);
+            Assert.Equal(values?[":p3"].Item3, null);
+            Assert.Equal(values?[":p4"].Item1, "123");
+            Assert.Equal(values?[":p4"].Item2, PropertyType.String);
+            Assert.Equal(values?[":p4"].Item3, null);
+            Assert.Equal(names?.ContainsKey("#Email"), true);
+            Assert.Equal(names?.ContainsKey("#Name"), true);
+            Assert.Equal(names?.ContainsKey("#UserAge"), true);
+            Assert.Equal(names?["#Name"], "Name");
+            Assert.Equal(names?["#Email"], "Email");
+            Assert.Equal(names?["#UserAge"], "UserAge");
         }
 
         [Fact]
         public void FilterAsParameter()
         {
+            var date = new DateTime(2017, 1, 1);
             IFilterable<PersonModel> filter = new DynamoDbFilterBuilder<PersonModel>();
             filter
-                .Where(x => x.Email == "n1" && x.Name == "n2")
+                .Where(x => x.CreatedAt <= date && x.Name == "n2")
                 .Where(x => x.PersonId == "123", FilterConcatenationType.Or);
 
             var compiledFilter = new DynamoDbFilterBuilder<PersonModel>()
@@ -93,19 +176,25 @@ namespace DynORM.UnitTest
             var names = compiledFilter.GetNames();
             var values = compiledFilter.GetValues();
 
-            Assert.Equal("(#Email = :p1 AND #Name = :p2 OR #PersonId = :p3)", query);
-            Assert.Equal(names?.ContainsKey("#Email"), true);
+            Assert.Equal("(#created-at <= :p1 AND #Name = :p2 OR #PersonId = :p3)", query);
+            Assert.Equal(names?.ContainsKey("#created-at"), true);
             Assert.Equal(names?.ContainsKey("#Name"), true);
             Assert.Equal(names?.ContainsKey("#PersonId"), true);
             Assert.Equal(names?["#PersonId"], "PersonId");
             Assert.Equal(names?["#Name"], "Name");
-            Assert.Equal(names?["#Email"], "Email");
+            Assert.Equal(names?["#created-at"], "created-at");
             Assert.Equal(values?.ContainsKey(":p1"), true);
             Assert.Equal(values?.ContainsKey(":p2"), true);
             Assert.Equal(values?.ContainsKey(":p3"), true);
-            Assert.Equal(values?[":p1"].Item1, "n1");
+            Assert.Equal(values?[":p1"].Item1, date);
+            Assert.Equal(values?[":p1"].Item2, PropertyType.Number);
+            Assert.Equal(values?[":p1"].Item3, typeof(DateConverter));
             Assert.Equal(values?[":p2"].Item1, "n2");
+            Assert.Equal(values?[":p2"].Item2, PropertyType.String);
+            Assert.Equal(values?[":p2"].Item3, null);
             Assert.Equal(values?[":p3"].Item1, "123");
+            Assert.Equal(values?[":p3"].Item2, PropertyType.String);
+            Assert.Equal(values?[":p3"].Item3, null);
         }
 
         [Fact]
@@ -125,10 +214,50 @@ namespace DynORM.UnitTest
             Assert.Equal(values?.ContainsKey(":p2"), true);
             Assert.Equal(values?.ContainsKey(":p3"), true);
             Assert.Equal(values?[":p1"].Item1, "n1");
+            Assert.Equal(values?[":p1"].Item2, PropertyType.String);
+            Assert.Equal(values?[":p1"].Item3, null);
             Assert.Equal(values?[":p2"].Item1, "n2");
+            Assert.Equal(values?[":p2"].Item2, PropertyType.String);
+            Assert.Equal(values?[":p2"].Item3, null);
             Assert.Equal(values?[":p3"].Item1, "n3");
+            Assert.Equal(values?[":p3"].Item2, PropertyType.String);
+            Assert.Equal(values?[":p3"].Item3, null);
             Assert.Equal(names?.ContainsKey("#Email"), true);
             Assert.Equal(names?["#Email"], "Email");
+        }
+
+        [Fact]
+        public void InWithConverters()
+        {
+            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            var random = new Random();
+            var dt1 = new DateTime(random.Next(2000, DateTime.Now.Year), random.Next(1, 12), random.Next(1, 28));
+            var dt2 = new DateTime(random.Next(2000, DateTime.Now.Year), random.Next(1, 12), random.Next(1, 28));
+            var dt3 = new DateTime(random.Next(2000, DateTime.Now.Year), random.Next(1, 12), random.Next(1, 28));
+
+            var compiledFilter = builder
+                .WhereIn(x => x.CreatedAt, new List<DateTime>() { dt1, dt2, dt3 })
+                .Build();
+
+            var query = compiledFilter.GetQuery();
+            var values = compiledFilter.GetValues();
+            var names = compiledFilter.GetNames();
+
+            Assert.Equal("#created-at in (:p1, :p2, :p3)", query);
+            Assert.Equal(values?.ContainsKey(":p1"), true);
+            Assert.Equal(values?.ContainsKey(":p2"), true);
+            Assert.Equal(values?.ContainsKey(":p3"), true);
+            Assert.Equal(values?[":p1"].Item1, dt1);
+            Assert.Equal(values?[":p1"].Item2, PropertyType.Number);
+            Assert.Equal(values?[":p1"].Item3, typeof(DateConverter));
+            Assert.Equal(values?[":p2"].Item1, dt2);
+            Assert.Equal(values?[":p2"].Item2, PropertyType.Number);
+            Assert.Equal(values?[":p2"].Item3, typeof(DateConverter));
+            Assert.Equal(values?[":p3"].Item1, dt3);
+            Assert.Equal(values?[":p3"].Item2, PropertyType.Number);
+            Assert.Equal(values?[":p3"].Item3, typeof(DateConverter));
+            Assert.Equal(names?.ContainsKey("#created-at"), true);
+            Assert.Equal(names?["#created-at"], "created-at");
         }
 
         [Fact]
@@ -208,20 +337,22 @@ namespace DynORM.UnitTest
         {
             IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
             var compiledFilter = builder
-                .WhereBeginsWith(x => x.Email, "n1")
+                .WhereBeginsWith(x => x.Age, "10")
                 .Build();
 
             var query = compiledFilter.GetQuery();
             var values = compiledFilter.GetValues();
             var names = compiledFilter.GetNames();
 
-            Assert.Equal("begins_with (#Email, :p1)", query);
+            Assert.Equal("begins_with (#UserAge, :p1)", query);
             Assert.Equal(values?.Count, 1);
             Assert.Equal(names?.Count, 1);
-            Assert.Equal(names?.ContainsKey("#Email"), true);
-            Assert.Equal(names?["#Email"], "Email");
+            Assert.Equal(names?.ContainsKey("#UserAge"), true);
+            Assert.Equal(names?["#UserAge"], "UserAge");
             Assert.Equal(values?.ContainsKey(":p1"), true);
-            Assert.Equal(values?[":p1"].Item1, "n1");
+            Assert.Equal(values?[":p1"].Item1, "10");
+            Assert.Equal(values?[":p1"].Item2, PropertyType.String);
+            Assert.Equal(values?[":p1"].Item3, null);
         }
 
         [Fact]

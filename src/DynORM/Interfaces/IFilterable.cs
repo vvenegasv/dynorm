@@ -54,7 +54,7 @@ namespace DynORM.Interfaces
         /// <param name="values">Value list</param>
         /// <exception cref="ExpressionNotSupportedException">If expression is not supported</exception>
         /// <returns>Updated filter builder</returns>
-        IFilterable<TModel> WhereIn<TValue>(Expression<Func<TModel, TValue>> property, IEnumerable<TValue> values) where TValue : class;
+        IFilterable<TModel> WhereIn<TValue>(Expression<Func<TModel, TValue>> property, IEnumerable<TValue> values);
 
         /// <summary>
         /// True if the property value is equal to any value in the list
@@ -65,7 +65,7 @@ namespace DynORM.Interfaces
         /// <param name="concatenationType">Concatenation type (And/Or)</param>
         /// <exception cref="ExpressionNotSupportedException">If expression is not supported</exception>
         /// <returns>Updated filter builder</returns>
-        IFilterable<TModel> WhereIn<TValue>(Expression<Func<TModel, TValue>> property, IEnumerable<TValue> values, FilterConcatenationType concatenationType) where TValue : class;
+        IFilterable<TModel> WhereIn<TValue>(Expression<Func<TModel, TValue>> property, IEnumerable<TValue> values, FilterConcatenationType concatenationType);
 
 
 
@@ -143,7 +143,7 @@ namespace DynORM.Interfaces
         /// <typeparam name="TValue">Attribute specified type</typeparam>
         /// <param name="property">Attribute specified value</param>
         /// <returns>Updated filter builder</returns>
-        IFilterable<TModel> WhereBeginsWith<TValue>(Expression<Func<TModel, TValue>> property, string substring) where TValue : class;
+        IFilterable<TModel> WhereBeginsWith<TValue>(Expression<Func<TModel, TValue>> property, string substring);
 
         /// <summary>
         /// True if the attribute specified begins with a particular substring
@@ -152,7 +152,7 @@ namespace DynORM.Interfaces
         /// <param name="property">Attribute specified value</param>
         /// <param name="concatenationType">Concatenation type (And/Or)</param>
         /// <returns>Updated filter builder</returns>
-        IFilterable<TModel> WhereBeginsWith<TValue>(Expression<Func<TModel, TValue>> property, string substring, FilterConcatenationType concatenationType) where TValue : class;
+        IFilterable<TModel> WhereBeginsWith<TValue>(Expression<Func<TModel, TValue>> property, string substring, FilterConcatenationType concatenationType);
 
 
 

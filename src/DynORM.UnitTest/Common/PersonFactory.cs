@@ -64,7 +64,9 @@ namespace DynORM.UnitTest.Common
                 PersonId = Guid.NewGuid().ToString(),
                 Name = name,
                 Email = MakeEmail(name),
-                Phones = phones
+                Phones = phones,
+                Age = _random.Next(10, 65),
+                CreatedAt = new DateTime(_random.Next(2010, DateTime.Now.Year), _random.Next(1, 12), _random.Next(1,28))
             };
         }
 
