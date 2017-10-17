@@ -11,14 +11,14 @@ using DynORM.Helpers;
 
 namespace DynORM.Mappers
 {
-    internal class ItemMapper<TItem> where TItem : class
+    internal class RequestMaker<TItem> where TItem : class
     {
         private readonly MetadataHelper _metadata;
         private readonly ItemHelper _itemHelper;
         private readonly Dictionary<string, string> _names;
         private readonly TItem _item;
         
-        public ItemMapper(TItem item)
+        public RequestMaker(TItem item)
         {
             _item = item;
             _itemHelper = ItemHelper.Instance;
@@ -32,7 +32,7 @@ namespace DynORM.Mappers
             {
                 TableName = _itemHelper.GetTableName(_item),
                 Item = ToDictionary(_item),
-                ExpressionAttributeNames = _names
+                ExpressionAttributeNames = new ExpressionAttributeNamesMaker<TItem>(_item).GetNames()
             };
         }
 
@@ -47,31 +47,12 @@ namespace DynORM.Mappers
                 var dynIgnoreProp = property.GetCustomAttribute<DynamoDBIgnoreAttribute>();
                 if(dynIgnoreProp != null)
                     continue;
-
-                var dynProp = property.GetCustomAttribute<DynamoDBPropertyAttribute>();
-                var dynHashProp = property.GetCustomAttribute<DynamoDBHashKeyAttribute>();
-                var dynRangeProp = property.GetCustomAttribute<DynamoDBRangeKeyAttribute>();
-                var dynGsiHashProp = property.GetCustomAttribute<DynamoDBGlobalSecondaryIndexHashKeyAttribute>();
-                var dynGsiRangeProp = property.GetCustomAttribute<DynamoDBGlobalSecondaryIndexRangeKeyAttribute>();
-
-                string name;
-                var value = ToAttibuteValue(item, property);
-
-                if (!string.IsNullOrWhiteSpace(dynProp?.AttributeName))
-                    name = dynProp.AttributeName;
-                else if (!string.IsNullOrWhiteSpace(dynHashProp?.AttributeName))
-                    name = dynHashProp.AttributeName;
-                else if (!string.IsNullOrWhiteSpace(dynRangeProp?.AttributeName))
-                    name = dynRangeProp.AttributeName;
-                else if (!string.IsNullOrWhiteSpace(dynGsiHashProp?.AttributeName))
-                    name = dynGsiHashProp.AttributeName;
-                else if (!string.IsNullOrWhiteSpace(dynGsiRangeProp?.AttributeName))
-                    name = dynGsiRangeProp.AttributeName;
-                else
-                    name = property.Name;
-
+                
+                var name = _itemHelper.GetColumnName(property);
+                var converter = _itemHelper.GetColumnConverter(property);
                 var alias = "#" + name;
-                data.Add(alias, value);
+                
+                //data.Add(alias, ToAttibuteValue(item, property, converter));
                 if(!_names.ContainsKey(alias))
                     _names.Add(alias, name);
             }
@@ -79,8 +60,8 @@ namespace DynORM.Mappers
             return data;
         }
 
-
-        private AttributeValue ToAttibuteValue<TModel>(TModel item, PropertyInfo property)
+        /*
+        private AttributeValue ToAttibuteValue<TModel>(TModel item, PropertyInfo property, Type converter)
         {
             var type = property.PropertyType;
             var value = new AttributeValue();
@@ -152,6 +133,7 @@ namespace DynORM.Mappers
 
             return value;
         }
+        */
     }
 }
 

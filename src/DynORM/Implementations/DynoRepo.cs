@@ -12,13 +12,13 @@ using DynORM.Mappers;
 
 namespace DynORM.Implementations
 {
-    public class Repository<TModel> : IRepository<TModel> where TModel : class
+    public class DynoRepo<TModel> : IDynoRepo<TModel> where TModel : class
     {
         private readonly AWSCredentials _credentials;
         private readonly RegionEndpoint _endpoint;
         private readonly ItemHelper _itemHelper;
 
-        internal Repository(AWSCredentials credentials, RegionEndpoint endpoint)
+        internal DynoRepo(AWSCredentials credentials, RegionEndpoint endpoint)
         {
             _credentials = credentials;
             _endpoint = endpoint;
@@ -33,18 +33,18 @@ namespace DynORM.Implementations
                 throw new ArgumentNullException(nameof(item));
 
             var client = GetDynamoDbClient();
-            var putRequest = new ItemMapper<TModel>(item).ToRequest();
+            var putRequest = new RequestMaker<TModel>(item).ToRequest();
             var response = await client.PutItemAsync(putRequest);
         }
 
-        public async Task Create(TModel item, IFilterable<TModel> condition)
+        public async Task Create(TModel item, IDynoFilter<TModel> condition)
         {
             if (item == null)
                 throw new ArgumentNullException(nameof(item));
 
             var usable = condition.Build();
             var client = GetDynamoDbClient();
-            var putRequest = new ItemMapper<TModel>(item).ToRequest();
+            var putRequest = new RequestMaker<TModel>(item).ToRequest();
             putRequest.ConditionExpression = usable.GetQuery();
 
             foreach (var kv in usable.GetNames())
@@ -66,12 +66,12 @@ namespace DynORM.Implementations
             throw new NotImplementedException();
         }
 
-        public Task Delete(TModel item, IFilterable<TModel> condition)
+        public Task Delete(TModel item, IDynoFilter<TModel> condition)
         {
             throw new NotImplementedException();
         }
 
-        public Task Delete(IFilterable<TModel> condition)
+        public Task Delete(IDynoFilter<TModel> condition)
         {
             throw new NotImplementedException();
         }
@@ -88,46 +88,46 @@ namespace DynORM.Implementations
             throw new NotImplementedException();
         }
 
-        public IScannable<TModel> Query<THashKey>(THashKey hashKey) where THashKey : class
+        public IDynoQuery<TModel> Query<THashKey>(THashKey hashKey) where THashKey : class
         {
             throw new NotImplementedException();
         }
 
-        public IScannable<TModel> Query<THashKey>(THashKey hashKey, Dictionary<string, Tuple<object, Type>> lastEvaluatedKey) where THashKey : class
+        public IDynoQuery<TModel> Query<THashKey>(THashKey hashKey, Dictionary<string, Tuple<object, Type>> lastEvaluatedKey) where THashKey : class
         {
             throw new NotImplementedException();
         }
 
-        public IScannable<TProjection> Query<TIndex, TProjection>(IFilterable<TIndex> filter)
+        public IDynoQuery<TProjection> Query<TIndex, TProjection>(IDynoFilter<TIndex> filter)
             where TIndex : class
             where TProjection : class
         {
             throw new NotImplementedException();
         }
 
-        public IScannable<TProjection> Query<TIndex, TProjection>(IFilterable<TIndex> filter, Dictionary<string, Tuple<object, Type>> lastEvaluatedKey)
+        public IDynoQuery<TProjection> Query<TIndex, TProjection>(IDynoFilter<TIndex> filter, Dictionary<string, Tuple<object, Type>> lastEvaluatedKey)
             where TIndex : class
             where TProjection : class
         {
             throw new NotImplementedException();
         }
 
-        public IScannable<TModel> Scan(IFilterable<TModel> filter)
+        public IDynoQuery<TModel> Scan(IDynoFilter<TModel> filter)
         {
             throw new NotImplementedException();
         }
 
-        public IScannable<TModel> Scan(IFilterable<TModel> filter, Dictionary<string, Tuple<object, Type>> lastEvaluatedKey)
+        public IDynoQuery<TModel> Scan(IDynoFilter<TModel> filter, Dictionary<string, Tuple<object, Type>> lastEvaluatedKey)
         {
             throw new NotImplementedException();
         }
 
-        public IScannable<TModel> Scan()
+        public IDynoQuery<TModel> Scan()
         {
             throw new NotImplementedException();
         }
 
-        public IScannable<TModel> Scan(Dictionary<string, Tuple<object, Type>> lastEvaluatedKey)
+        public IDynoQuery<TModel> Scan(Dictionary<string, Tuple<object, Type>> lastEvaluatedKey)
         {
             throw new NotImplementedException();
         }
@@ -137,12 +137,12 @@ namespace DynORM.Implementations
             throw new NotImplementedException();
         }
 
-        public Task Update(TModel item, IFilterable<TModel> condition)
+        public Task Update(TModel item, IDynoFilter<TModel> condition)
         {
             throw new NotImplementedException();
         }
 
-        public Task Update(dynamic item, IFilterable<TModel> condition)
+        public Task Update(dynamic item, IDynoFilter<TModel> condition)
         {
             throw new NotImplementedException();
         }

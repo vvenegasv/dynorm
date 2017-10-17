@@ -3,24 +3,22 @@ using System.Collections.Generic;
 using System.Text;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.DocumentModel;
+using DynORM.Interfaces;
 
 namespace DynORM.UnitTest.Common
 {
-    internal class DateConverter : IPropertyConverter
+    internal class DateConverter : IDynoConvert
     {
-        public object FromEntry(DynamoDBEntry entry)
+        public Tuple<string, Type> ToItem(object value)
         {
-            return new DateTime(entry.AsLong());
+            var date = (DateTime)value;
+            return new Tuple<string, Type>(date.Ticks.ToString(), typeof(DateTime));
         }
 
-        public DynamoDBEntry ToEntry(object value)
+        public object ToValue(string item)
         {
-            var date = (DateTime) value;
-            return new Primitive
-            {
-                Type = DynamoDBEntryType.Numeric,
-                Value = date.Ticks
-            };
+            var ticks = Convert.ToInt64(item);
+            return new DateTime(ticks);
         }
     }
 }

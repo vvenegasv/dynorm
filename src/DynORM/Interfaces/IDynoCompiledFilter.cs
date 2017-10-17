@@ -4,7 +4,7 @@ using DynORM.Models;
 
 namespace DynORM.Interfaces
 {
-    public interface IFilterUsable
+    public interface IDynoCompiledFilter
     {
         /// <summary>
         /// Get the compiled query string

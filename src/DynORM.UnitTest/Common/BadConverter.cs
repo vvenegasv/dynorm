@@ -7,19 +7,16 @@ namespace DynORM.UnitTest.Common
 {
     internal class BadConverter
     {
-        public object FromEntry(DynamoDBEntry entry)
-        {
-            return new DateTime(entry.AsLong());
-        }
-
-        public DynamoDBEntry ToEntry(object value)
+        public Tuple<string, Type> ToItem(object value)
         {
             var date = (DateTime)value;
-            return new Primitive
-            {
-                Type = DynamoDBEntryType.Numeric,
-                Value = date.Ticks
-            };
+            return new Tuple<string, Type>(date.Ticks.ToString(), typeof(DateTime));
+        }
+
+        public object ToValue(string item)
+        {
+            var ticks = Convert.ToInt64(item);
+            return new DateTime(ticks);
         }
     }
 }

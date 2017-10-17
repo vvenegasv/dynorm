@@ -8,6 +8,7 @@ using System.Linq.Expressions;
 using Amazon.DynamoDBv2.Model;
 using DynORM.Attributes;
 using DynORM.Exceptions;
+using DynORM.Interfaces;
 using DynORM.Models;
 
 namespace DynORM.Helpers
@@ -69,38 +70,41 @@ namespace DynORM.Helpers
             return GetColumnName(memberInfo);
         }
 
+        public Type GetColumnConverter(MemberInfo member)
+        {
+            var dynProp = member.GetCustomAttribute<DynoPropertyAttribute>();
+            var converter = dynProp?.Converter;
+
+            if (converter == null)
+                return null;
+
+            if (converter.GetTypeInfo().ImplementedInterfaces?.All(x => x != typeof(IDynoConvert)) ?? true)
+                throw new InvalidConverter($"The converter type '{converter}' not implements 'IDynoConvert' interface");
+
+            return converter;
+        }
+
         public Type GetColumnConverter(MemberExpression property)
         {
             if (property?.NodeType != ExpressionType.MemberAccess)
                 throw new ExpressionNotSupportedException($"Expression '{property}' not refers to a valid property");
 
             var memberInfo = property.Member;
+            return GetColumnConverter(memberInfo);
+        }
 
-            var dynProp = memberInfo.GetCustomAttribute<DynamoDBPropertyAttribute>();
-            var dynHashProp = memberInfo.GetCustomAttribute<DynamoDBHashKeyAttribute>();
-            var dynRangeProp = memberInfo.GetCustomAttribute<DynamoDBRangeKeyAttribute>();
-            var dynGsiHashProp = memberInfo.GetCustomAttribute<DynamoDBGlobalSecondaryIndexHashKeyAttribute>();
-            var dynGsiRangeProp = memberInfo.GetCustomAttribute<DynamoDBGlobalSecondaryIndexRangeKeyAttribute>();
-            Type converter = null;
+        public PropertyType GetColumnType(MemberInfo member)
+        {
+            var att = member.GetCustomAttribute<DynoPropertyAttribute>();
+            var type = (member as PropertyInfo)?.PropertyType;
 
-            if (dynProp?.Converter != null)
-                converter = dynProp.Converter;
-            if (dynHashProp?.Converter != null)
-                converter = dynHashProp.Converter;
-            if (dynRangeProp?.Converter != null)
-                converter = dynRangeProp.Converter;
-            if (dynGsiHashProp?.Converter != null)
-                converter = dynGsiHashProp.Converter;
-            if (dynGsiRangeProp?.Converter != null)
-                converter = dynGsiRangeProp.Converter;
-
-            if (converter == null)
-                return converter;
-
-            if (converter.GetTypeInfo().ImplementedInterfaces?.All(x => x != typeof(IPropertyConverter)) ?? true)
-                throw new InvalidConverter($"The converter type '{converter}' not implements 'IPropertyConverter' interface");
-
-            return converter;
+            if (att?.DatabaseColumnType != null)
+                return att.DatabaseColumnType;
+            if (_metadata.IsNumber(type))
+                return PropertyType.Number;
+            if (_metadata.IsBoolean(type))
+                return PropertyType.Boolean;
+            return PropertyType.String;
         }
 
         public PropertyType GetColumnType(MemberExpression property)
@@ -109,16 +113,12 @@ namespace DynORM.Helpers
                 throw new ExpressionNotSupportedException($"Expression {property} is unsupported");
 
             var memberInfo = property.Member;
-            var att = memberInfo.GetCustomAttribute<PropertyTypeAttribute>();
+            return GetColumnType(memberInfo);
+        }
 
-            if (att?.PropertyType != null)
-                return att.PropertyType;
-            if (_metadata.IsNumber(property.Type))
-                return PropertyType.Number;
-            if (_metadata.IsBoolean(property.Type))
-                return PropertyType.Boolean;
-            return PropertyType.String;
-
+        public bool ColumnIsIgnored(MemberInfo member)
+        {
+            return member.GetCustomAttribute<DynamoDBIgnoreAttribute>() == null;
         }
 
         public string GetTableName<TModel>(TModel item) where TModel : class

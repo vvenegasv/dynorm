@@ -49,9 +49,9 @@ namespace DynORM.Helpers
         /// </summary>
         /// <typeparam name="TModel">Type of the repository</typeparam>
         /// <returns>New instance for the TModel Repository</returns>
-        public IRepository<TModel> MakeNew<TModel>() where TModel : class
+        public IDynoRepo<TModel> MakeNew<TModel>() where TModel : class
         {
-            return new Repository<TModel>(_configReader.Credentials, _configReader.Endpoint);
+            return new DynoRepo<TModel>(_configReader.Credentials, _configReader.Endpoint);
         }
 
         /// <summary>
@@ -60,9 +60,9 @@ namespace DynORM.Helpers
         /// <typeparam name="TModel">Type of the repository</typeparam>
         /// <param name="credentials">Credentials to connect to DynamoDB Service</param>
         /// <returns>New instance for the TModel Repository</returns>
-        public IRepository<TModel> MakeNew<TModel>(AWSCredentials credentials) where TModel : class
+        public IDynoRepo<TModel> MakeNew<TModel>(AWSCredentials credentials) where TModel : class
         {
-            return new Repository<TModel>(credentials, _configReader.Endpoint);
+            return new DynoRepo<TModel>(credentials, _configReader.Endpoint);
         }
 
         /// <summary>
@@ -72,9 +72,9 @@ namespace DynORM.Helpers
         /// <param name="credentials">Credentials to connect to DynamoDB Service</param>
         /// <param name="endpoint">Endpoint of the DynamoDB service</param>
         /// <returns>New instance for the TModel Repository</returns>
-        public IRepository<TModel> MakeNew<TModel>(AWSCredentials credentials, RegionEndpoint endpoint) where TModel : class
+        public IDynoRepo<TModel> MakeNew<TModel>(AWSCredentials credentials, RegionEndpoint endpoint) where TModel : class
         {
-            return new Repository<TModel>(credentials, endpoint);
+            return new DynoRepo<TModel>(credentials, endpoint);
         }        
     }
 }

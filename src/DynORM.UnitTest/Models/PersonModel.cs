@@ -20,12 +20,12 @@ namespace DynORM.UnitTest.Models
         [DynamoDBProperty]
         public string Email { get; set; }
 
-        [PropertyType(PropertyType = PropertyType.String)]
+        [DynoProperty(DatabaseColumnType = PropertyType.String)]
         [DynamoDBProperty("UserAge")]
         public int Age { get; set; }
 
-        [PropertyType(PropertyType = PropertyType.Number)]
-        [DynamoDBProperty("created-at", Converter = typeof(DateConverter))]
+        [DynoProperty(DatabaseColumnType = PropertyType.Number, Converter = typeof(DateConverter))]
+        [DynamoDBProperty("created-at")]
         public DateTime CreatedAt { get; set; }
 
         [DynamoDBProperty]

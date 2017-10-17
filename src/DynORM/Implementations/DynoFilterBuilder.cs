@@ -11,7 +11,7 @@ using DynORM.Models;
 
 namespace DynORM.Implementations
 {
-    public class DynamoDbFilterBuilder<TModel> : IFilterUsable, IFilterable<TModel> where TModel : class
+    public class DynoFilterBuilder<TModel> : IDynoCompiledFilter, IDynoFilter<TModel> where TModel : class
     {
         private readonly ItemHelper _itemHelper;
         private readonly MetadataHelper _metadataHelper;
@@ -24,7 +24,7 @@ namespace DynORM.Implementations
         private readonly IDictionary<string, string> _namesTokens;
 
 
-        public DynamoDbFilterBuilder() : base()
+        public DynoFilterBuilder() : base()
         {
             _itemHelper = ItemHelper.Instance;
             _metadataHelper = MetadataHelper.Instance;
@@ -33,7 +33,7 @@ namespace DynORM.Implementations
             _valuesTokens = new Dictionary<string, Tuple<object, PropertyType, Type>>();
         }
 
-        public DynamoDbFilterBuilder(string filter)
+        public DynoFilterBuilder(string filter)
         {
             _itemHelper = ItemHelper.Instance;
             _metadataHelper = MetadataHelper.Instance;
@@ -45,12 +45,12 @@ namespace DynORM.Implementations
 
 
 
-        public IFilterable<TModel> Where(Expression<Func<TModel, bool>> expression)
+        public IDynoFilter<TModel> Where(Expression<Func<TModel, bool>> expression)
         {
             return Where(expression, FilterConcatenationType.And);
         }
 
-        public IFilterable<TModel> Where(Expression<Func<TModel, bool>> expression, FilterConcatenationType concatenationType)
+        public IDynoFilter<TModel> Where(Expression<Func<TModel, bool>> expression, FilterConcatenationType concatenationType)
         {
             if (expression?.Body is BinaryExpression)
             {                
@@ -65,12 +65,12 @@ namespace DynORM.Implementations
             return this;
         }
 
-        public IFilterable<TModel> Where(IFilterable<TModel> filter)
+        public IDynoFilter<TModel> Where(IDynoFilter<TModel> filter)
         {
             return Where(filter, FilterConcatenationType.And);
         }
 
-        public IFilterable<TModel> Where(IFilterable<TModel> filter, FilterConcatenationType concatenationType)
+        public IDynoFilter<TModel> Where(IDynoFilter<TModel> filter, FilterConcatenationType concatenationType)
         {
             if(filter == null)
                 throw new ArgumentNullException(nameof(filter), $"{nameof(filter)} cannot be null");
@@ -105,12 +105,12 @@ namespace DynORM.Implementations
             return this;
         }
 
-        public IFilterable<TModel> WhereIn<TValue>(Expression<Func<TModel, TValue>> property, IEnumerable<TValue> values)
+        public IDynoFilter<TModel> WhereIn<TValue>(Expression<Func<TModel, TValue>> property, IEnumerable<TValue> values)
         {
             return WhereIn(property, values, FilterConcatenationType.And);
         }
 
-        public IFilterable<TModel> WhereIn<TValue>(Expression<Func<TModel, TValue>> property, IEnumerable<TValue> values, FilterConcatenationType concatenationType)
+        public IDynoFilter<TModel> WhereIn<TValue>(Expression<Func<TModel, TValue>> property, IEnumerable<TValue> values, FilterConcatenationType concatenationType)
         {
             if (property?.NodeType != ExpressionType.Lambda)
                 throw new ExpressionNotSupportedException($"Expression {property} is unsupported");
@@ -145,12 +145,12 @@ namespace DynORM.Implementations
             return this;
         }
 
-        public IFilterable<TModel> WhereAttributeExists<TValue>(Expression<Func<TModel, TValue>> property) where TValue : class
+        public IDynoFilter<TModel> WhereAttributeExists<TValue>(Expression<Func<TModel, TValue>> property) where TValue : class
         {
             return WhereAttributeExists(property, FilterConcatenationType.And);
         }
 
-        public IFilterable<TModel> WhereAttributeExists<TValue>(Expression<Func<TModel, TValue>> property, FilterConcatenationType concatenationType) where TValue : class
+        public IDynoFilter<TModel> WhereAttributeExists<TValue>(Expression<Func<TModel, TValue>> property, FilterConcatenationType concatenationType) where TValue : class
         {
             var memberExpression = property.Body as MemberExpression;
             if (memberExpression == null)
@@ -169,12 +169,12 @@ namespace DynORM.Implementations
             return this;
         }
 
-        public IFilterable<TModel> WhereAttributeExists(string property)
+        public IDynoFilter<TModel> WhereAttributeExists(string property)
         {
             return WhereAttributeExists(property, FilterConcatenationType.And);
         }
 
-        public IFilterable<TModel> WhereAttributeExists(string property, FilterConcatenationType concatenationType)
+        public IDynoFilter<TModel> WhereAttributeExists(string property, FilterConcatenationType concatenationType)
         {
             var key = "#" + property;
             if(!_namesTokens.ContainsKey(key))
@@ -188,12 +188,12 @@ namespace DynORM.Implementations
             return this;
         }
 
-        public IFilterable<TModel> WhereAttributeNotExists<TValue>(Expression<Func<TModel, TValue>> property) where TValue : class
+        public IDynoFilter<TModel> WhereAttributeNotExists<TValue>(Expression<Func<TModel, TValue>> property) where TValue : class
         {
             return WhereAttributeNotExists(property, FilterConcatenationType.And);
         }
 
-        public IFilterable<TModel> WhereAttributeNotExists<TValue>(Expression<Func<TModel, TValue>> property, FilterConcatenationType concatenationType) where TValue : class
+        public IDynoFilter<TModel> WhereAttributeNotExists<TValue>(Expression<Func<TModel, TValue>> property, FilterConcatenationType concatenationType) where TValue : class
         {
             var memberExpression = property.Body as MemberExpression;
             if (memberExpression == null)
@@ -212,12 +212,12 @@ namespace DynORM.Implementations
             return this;
         }
 
-        public IFilterable<TModel> WhereAttributeNotExists(string property)
+        public IDynoFilter<TModel> WhereAttributeNotExists(string property)
         {
             return WhereAttributeNotExists(property, FilterConcatenationType.And);
         }
 
-        public IFilterable<TModel> WhereAttributeNotExists(string property, FilterConcatenationType concatenationType)
+        public IDynoFilter<TModel> WhereAttributeNotExists(string property, FilterConcatenationType concatenationType)
         {
             var key = "#" + property;
             if (!_namesTokens.ContainsKey(key))
@@ -231,12 +231,12 @@ namespace DynORM.Implementations
             return this;
         }
 
-        public IFilterable<TModel> WhereBeginsWith<TValue>(Expression<Func<TModel, TValue>> property, string substring)
+        public IDynoFilter<TModel> WhereBeginsWith<TValue>(Expression<Func<TModel, TValue>> property, string substring)
         {
             return WhereBeginsWith(property, substring, FilterConcatenationType.And);
         }
 
-        public IFilterable<TModel> WhereBeginsWith<TValue>(Expression<Func<TModel, TValue>> property, string substring, FilterConcatenationType concatenationType)
+        public IDynoFilter<TModel> WhereBeginsWith<TValue>(Expression<Func<TModel, TValue>> property, string substring, FilterConcatenationType concatenationType)
         {
             var memberExpression = property.Body as MemberExpression;
             if (memberExpression == null)
@@ -259,12 +259,12 @@ namespace DynORM.Implementations
             return this;
         }
 
-        public IFilterable<TModel> WhereContains<TValue>(Expression<Func<TModel, TValue>> property, string target) where TValue : class
+        public IDynoFilter<TModel> WhereContains<TValue>(Expression<Func<TModel, TValue>> property, string target)
         {
             return WhereContains(property, target, FilterConcatenationType.And);
         }
 
-        public IFilterable<TModel> WhereContains<TValue>(Expression<Func<TModel, TValue>> property, string target, FilterConcatenationType concatenationType) where TValue : class
+        public IDynoFilter<TModel> WhereContains<TValue>(Expression<Func<TModel, TValue>> property, string target, FilterConcatenationType concatenationType)
         {
             var memberExpression = property.Body as MemberExpression;
             if (memberExpression == null)
@@ -277,6 +277,40 @@ namespace DynORM.Implementations
 
             var index = _valuesTokens.Count + 1;
             var parameter = ":p" + index;
+            _valuesTokens.Add(parameter, new Tuple<object, PropertyType, Type>(target, GetPropertyType(memberExpression), _itemHelper.GetColumnConverter(memberExpression)));
+
+            var query = $"contains ({key}, {parameter})";
+
+            if (_filters.Any())
+                _filters.Add($"{GetConcatenationValue(concatenationType)} {query}");
+            else
+                _filters.Add(query);
+
+            return this;
+        }
+
+        public IDynoFilter<TModel> WhereContains<TValue>(Expression<Func<TModel, IEnumerable<TValue>>> property, TValue target)
+        {
+            return WhereContains(property, target, FilterConcatenationType.And);
+        }
+
+        public IDynoFilter<TModel> WhereContains<TValue>(Expression<Func<TModel, IEnumerable<TValue>>> property, TValue target, FilterConcatenationType concatenationType)
+        {
+            var memberExpression = property.Body as MemberExpression;
+            if (memberExpression == null)
+                throw new ExpressionNotSupportedException($"Expression {property} is unsupported");
+
+            var name = _itemHelper.GetColumnName(memberExpression);
+            var key = "#" + name;
+            if (!_namesTokens.ContainsKey(key))
+                _namesTokens.Add(key, name);
+
+            var index = _valuesTokens.Count + 1;
+            var parameter = ":p" + index;
+
+            //TODO: IPropertyConverter can only be defined by dynamodb restriction, only in properties. 
+            //We need to find a way to set a converter on a level class for List properties. 
+            //At this moment, this feature is not in our roadmap and it will not supported.
             _valuesTokens.Add(parameter, new Tuple<object, PropertyType, Type>(target, GetPropertyType(target.GetType()), null));
 
             var query = $"contains ({key}, {parameter})";
@@ -288,13 +322,13 @@ namespace DynORM.Implementations
 
             return this;
         }
-        
-        public IFilterable<TModel> WhereSize<TValue>(Expression<Func<TModel, TValue>> property, ComparisonType comparisonType, int value) where TValue : class
+
+        public IDynoFilter<TModel> WhereSize<TValue>(Expression<Func<TModel, TValue>> property, ComparisonType comparisonType, int value) where TValue : class
         {
             return WhereSize(property, comparisonType, value, FilterConcatenationType.And);
         }
 
-        public IFilterable<TModel> WhereSize<TValue>(Expression<Func<TModel, TValue>> property, ComparisonType comparisonType, int value, FilterConcatenationType concatenationType) where TValue : class
+        public IDynoFilter<TModel> WhereSize<TValue>(Expression<Func<TModel, TValue>> property, ComparisonType comparisonType, int value, FilterConcatenationType concatenationType) where TValue : class
         {
             var memberExpression = property.Body as MemberExpression;
             if (memberExpression == null)
@@ -319,7 +353,7 @@ namespace DynORM.Implementations
             return this;
         }
 
-        public IFilterUsable Build()
+        public IDynoCompiledFilter Build()
         {
             return this;
         }
@@ -556,7 +590,7 @@ namespace DynORM.Implementations
         /// <summary>
         /// Get alias for a member information as Tuple
         /// </summary>
-        /// <param name="member">Tuple Item1=ColumnName, Item2=PropertyType, Item3=ConverterType</param>
+        /// <param name="member">Tuple Item1=ColumnName, Item2=DatabaseColumnType, Item3=ConverterType</param>
         /// <returns>Alias for current member</returns>
         private string MapMemberInfo(Tuple<string, PropertyType, Type> member)
         {
@@ -603,6 +637,11 @@ namespace DynORM.Implementations
             if(_metadataHelper.IsBoolean(type))
                 return PropertyType.Boolean;
             return PropertyType.String;
+        }
+
+        private PropertyType GetPropertyType(MemberExpression member)
+        {
+            return GetPropertyType(member.GetType());
         }
 
     }

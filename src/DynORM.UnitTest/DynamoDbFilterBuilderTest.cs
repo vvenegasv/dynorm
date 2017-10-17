@@ -17,7 +17,7 @@ namespace DynORM.UnitTest
         [Fact]
         public void SingleExpression()
         {
-            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IDynoFilter<PersonModel> builder = new DynoFilterBuilder<PersonModel>();
             var compiledFilter = builder.Where(x => x.Name == "some name").Build();
             var query = compiledFilter.GetQuery();
             var values = compiledFilter.GetValues();
@@ -35,7 +35,7 @@ namespace DynORM.UnitTest
         [Fact]
         public void TwoExpression()
         {
-            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IDynoFilter<PersonModel> builder = new DynoFilterBuilder<PersonModel>();
             var compiledFilter = builder
                 .Where(x => x.Email == "n1" && x.Name == "n2")
                 .Build();
@@ -61,7 +61,7 @@ namespace DynORM.UnitTest
         [Fact]
         public void TwoWhere()
         {
-            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IDynoFilter<PersonModel> builder = new DynoFilterBuilder<PersonModel>();
             var compiledFilter = builder
                 .Where(x => x.Email == "n1" && x.Name == "n2")
                 .Where(x => x.Age < 40, FilterConcatenationType.Or)
@@ -94,7 +94,7 @@ namespace DynORM.UnitTest
         [Fact]
         public void BigWhere()
         {
-            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IDynoFilter<PersonModel> builder = new DynoFilterBuilder<PersonModel>();
             var compiledFilter = builder
                 .Where(x => x.Email == "n1" && (x.Name == "n2" || x.Age < 40))
                 .Build();
@@ -126,7 +126,7 @@ namespace DynORM.UnitTest
         [Fact]
         public void BigWhereWithTwoParentesis()
         {
-            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IDynoFilter<PersonModel> builder = new DynoFilterBuilder<PersonModel>();
             var compiledFilter = builder
                 .Where(x => (x.Email == "n1" && x.Name == "n2") || (x.Age < 40 && x.PersonId == "123"))
                 .Build();
@@ -163,12 +163,12 @@ namespace DynORM.UnitTest
         public void FilterAsParameter()
         {
             var date = new DateTime(2017, 1, 1);
-            IFilterable<PersonModel> filter = new DynamoDbFilterBuilder<PersonModel>();
+            IDynoFilter<PersonModel> filter = new DynoFilterBuilder<PersonModel>();
             filter
                 .Where(x => x.CreatedAt <= date && x.Name == "n2")
                 .Where(x => x.PersonId == "123", FilterConcatenationType.Or);
 
-            var compiledFilter = new DynamoDbFilterBuilder<PersonModel>()
+            var compiledFilter = new DynoFilterBuilder<PersonModel>()
                 .Where(filter)
                 .Build();
 
@@ -200,7 +200,7 @@ namespace DynORM.UnitTest
         [Fact]
         public void In()
         {
-            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IDynoFilter<PersonModel> builder = new DynoFilterBuilder<PersonModel>();
             var compiledFilter = builder
                 .WhereIn(x => x.Email, new List<string>() { "n1", "n2", "n3" })
                 .Build();
@@ -229,7 +229,7 @@ namespace DynORM.UnitTest
         [Fact]
         public void InWithConverters()
         {
-            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IDynoFilter<PersonModel> builder = new DynoFilterBuilder<PersonModel>();
             var random = new Random();
             var dt1 = new DateTime(random.Next(2000, DateTime.Now.Year), random.Next(1, 12), random.Next(1, 28));
             var dt2 = new DateTime(random.Next(2000, DateTime.Now.Year), random.Next(1, 12), random.Next(1, 28));
@@ -263,7 +263,7 @@ namespace DynORM.UnitTest
         [Fact]
         public void AttributeExists()
         {
-            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IDynoFilter<PersonModel> builder = new DynoFilterBuilder<PersonModel>();
             var compiledFilter = builder
                 .WhereAttributeExists(x => x.Email)
                 .Build();
@@ -281,7 +281,7 @@ namespace DynORM.UnitTest
         [Fact]
         public void AttributeExistsAsString()
         {
-            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IDynoFilter<PersonModel> builder = new DynoFilterBuilder<PersonModel>();
             var compiledFilter = builder
                 .WhereAttributeExists("Correo")
                 .Build();
@@ -299,7 +299,7 @@ namespace DynORM.UnitTest
         [Fact]
         public void AttributeNotExists()
         {
-            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IDynoFilter<PersonModel> builder = new DynoFilterBuilder<PersonModel>();
             var compiledFilter = builder
                 .WhereAttributeNotExists(x => x.Email)
                 .Build();
@@ -317,7 +317,7 @@ namespace DynORM.UnitTest
         [Fact]
         public void AttributeNotExistsAsString()
         {
-            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IDynoFilter<PersonModel> builder = new DynoFilterBuilder<PersonModel>();
             var compiledFilter = builder
                 .WhereAttributeNotExists("Correo")
                 .Build();
@@ -335,7 +335,7 @@ namespace DynORM.UnitTest
         [Fact]
         public void BeginsWith()
         {
-            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IDynoFilter<PersonModel> builder = new DynoFilterBuilder<PersonModel>();
             var compiledFilter = builder
                 .WhereBeginsWith(x => x.Age, "10")
                 .Build();
@@ -358,7 +358,7 @@ namespace DynORM.UnitTest
         [Fact]
         public void Contains()
         {
-            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IDynoFilter<PersonModel> builder = new DynoFilterBuilder<PersonModel>();
             var compiledFilter = builder
                 .WhereContains(x => x.Email, "n1")
                 .Build();
@@ -374,12 +374,39 @@ namespace DynORM.UnitTest
             Assert.Equal(names?["#Email"], "Email");
             Assert.Equal(values?.ContainsKey(":p1"), true);
             Assert.Equal(values?[":p1"].Item1, "n1");
+            Assert.Equal(values?[":p1"].Item2, PropertyType.String);
+            Assert.Equal(values?[":p1"].Item3, null);
+        }
+
+        [Fact]
+        public void ContainsPhone()
+        {
+            var phone = new PhoneModel {PhoneType = PhoneType.CellPhone, Number = "954865498"};
+
+            IDynoFilter<PersonModel> builder = new DynoFilterBuilder<PersonModel>();
+            var compiledFilter = builder
+                .WhereContains(x => x.Phones, phone)
+                .Build();
+
+            var query = compiledFilter.GetQuery();
+            var values = compiledFilter.GetValues();
+            var names = compiledFilter.GetNames();
+
+            Assert.Equal("contains (#Phones, :p1)", query);
+            Assert.Equal(values?.Count, 1);
+            Assert.Equal(names?.Count, 1);
+            Assert.Equal(names?.ContainsKey("#Phones"), true);
+            Assert.Equal(names?["#Phones"], "Phones");
+            Assert.Equal(values?.ContainsKey(":p1"), true);
+            Assert.Equal(values?[":p1"].Item1, phone);
+            Assert.Equal(values?[":p1"].Item2, PropertyType.String);
+            Assert.Equal(values?[":p1"].Item3, null);
         }
 
         [Fact]
         public void Size()
         {
-            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IDynoFilter<PersonModel> builder = new DynoFilterBuilder<PersonModel>();
             var compiledFilter = builder
                 .WhereSize(x => x.Email, ComparisonType.Greater, 20)
                 .Build();
@@ -395,27 +422,23 @@ namespace DynORM.UnitTest
             Assert.Equal(names?["#Email"], "Email");
             Assert.Equal(values?.ContainsKey(":p1"), true);
             Assert.Equal(values?[":p1"].Item1, 20);
+            Assert.Equal(values?[":p1"].Item2, PropertyType.Number);
+            Assert.Equal(values?[":p1"].Item3, null);
         }
 
         [Fact]
         public void InvalidWhere()
         {
-            var correctError = false;
-            IFilterable<PersonModel> builder = new DynamoDbFilterBuilder<PersonModel>();
+            IDynoFilter<PersonModel> builder = new DynoFilterBuilder<PersonModel>();
             try
             {
                 var query = builder.Where(x => x.Name.EndsWith("invalid!")).Build();
-            }
-            catch(ExpressionNotSupportedException ex)
-            {
-                correctError = true;
+                throw new Exception("ExpressionNotSupportedException was not raised!");
             }
             catch (Exception ex)
             {
-                correctError = false;
+                Assert.IsType<ExpressionNotSupportedException>(ex);
             }
-
-            Assert.Equal(correctError, true);
         }
     }
 }

@@ -6,14 +6,14 @@ using DynORM.Interfaces;
 
 namespace DynORM.Implementations
 {
-    public class ListIterator<TModel> : IIterable<TModel> where TModel : class
+    public class DynoResult<TModel> : IDynoResult<TModel> where TModel : class
     {
         private readonly IList<TModel> _data;
         private readonly int _consumedReadCapacity;
         private readonly int _consumedWrieCapacity;
         private readonly IDictionary<string, Tuple<object, Type>> _lastEvaluatedKey;
 
-        public ListIterator(IList<TModel> data, int consumedReadCapacity, int consumedWrieCapacity, IDictionary<string, Tuple<object, Type>> lastEvaluatedKey)
+        public DynoResult(IList<TModel> data, int consumedReadCapacity, int consumedWrieCapacity, IDictionary<string, Tuple<object, Type>> lastEvaluatedKey)
         {
             _data = data;
             _consumedReadCapacity = consumedReadCapacity;

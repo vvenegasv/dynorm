@@ -12,11 +12,11 @@ namespace DynORM.UnitTest
     public class ItemMapperTest
     {
         /*
-        private readonly ItemMapper _mapper;
+        private readonly RequestMaker _mapper;
 
         public ItemMapperTest()
         {
-            _mapper = ItemMapper.Instance;
+            _mapper = RequestMaker.Instance;
         }
 
         [Fact]
