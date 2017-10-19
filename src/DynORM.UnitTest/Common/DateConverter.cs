@@ -3,16 +3,20 @@ using System.Collections.Generic;
 using System.Text;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.DocumentModel;
+using Amazon.DynamoDBv2.Model;
 using DynORM.Interfaces;
 
 namespace DynORM.UnitTest.Common
 {
     internal class DateConverter : IDynoConvert
     {
-        public Tuple<string, Type> ToItem(object value)
+        public AttributeValue ToItem(object value)
         {
-            var date = (DateTime)value;
-            return new Tuple<string, Type>(date.Ticks.ToString(), typeof(DateTime));
+            var date = (DateTime) value;
+            return new AttributeValue
+            {
+                N = date.Ticks.ToString(),
+            };
         }
 
         public object ToValue(string item)
