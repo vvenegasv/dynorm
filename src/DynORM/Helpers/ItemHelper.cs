@@ -118,7 +118,7 @@ namespace DynORM.Helpers
 
         public bool ColumnIsIgnored(MemberInfo member)
         {
-            return member.GetCustomAttribute<DynamoDBIgnoreAttribute>() == null;
+            return member.GetCustomAttribute<DynamoDBIgnoreAttribute>() != null;
         }
 
         public string GetTableName<TModel>(TModel item) where TModel : class

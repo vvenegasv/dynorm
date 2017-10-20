@@ -48,9 +48,20 @@ namespace DynORM.Mappers
             return ToDictionary(item);
         }
 
-        public KeyValuePair<string, AttributeValue> ToValue(KeyValuePair<string, Tuple<object, PropertyType, Type>> item)
+        public Dictionary<string, AttributeValue> ToValue(IReadOnlyDictionary<string, Tuple<object, PropertyType, Type>> items)
         {
-            
+            return ToValue(items.ToDictionary(x => x.Key, x => x.Value));
+        }
+
+        public Dictionary<string, AttributeValue> ToValue(Dictionary<string, Tuple<object, PropertyType, Type>> items)
+        {
+            var data = new Dictionary<string, AttributeValue>();
+            foreach (var kv in items)
+            {
+                var attribute = ToAttributeValue(kv.Value);
+                data.Add(kv.Key, attribute);
+            }
+            return data;
         }
 
         private Dictionary<string, AttributeValue> ToDictionary<TItem>(TItem item)
@@ -73,18 +84,16 @@ namespace DynORM.Mappers
                 }
                 else
                 {
-                    data.Add(name, ToAttibuteValue(item, property));
+                    data.Add(name, ToAttributeValue(property.PropertyType, property.GetValue(item)));
                 }
             }
 
             return data;
         }
         
-
-        private AttributeValue ToAttibuteValue(Type type, object propertyValue)
+        private AttributeValue ToAttributeValue(Type type, object propertyValue)
         {
             var value = new AttributeValue();
-
 
             if (_metadataHelper.IsStream(type))
             {
@@ -112,7 +121,7 @@ namespace DynORM.Mappers
             else if (_metadataHelper.IsList(type) && _metadataHelper.GenericArgumentIsSingleValue(type))
             {
                 value.L = ((List<object>)propertyValue)
-                    .Select(x => ToAttibuteValue(x, x.GetType(), x))
+                    .Select(x => ToAttributeValue(x.GetType(), x))
                     .ToList();
                 value.IsLSet = true;
             }
@@ -165,8 +174,7 @@ namespace DynORM.Mappers
                 return converter.ToItem(value.Item1);
             }
 
-            return ToAttibuteValue()
-            
+            return ToAttributeValue(value.Item3, value.Item1);
         }
     }
 }

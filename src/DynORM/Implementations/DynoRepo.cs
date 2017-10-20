@@ -16,13 +16,13 @@ namespace DynORM.Implementations
     {
         private readonly AWSCredentials _credentials;
         private readonly RegionEndpoint _endpoint;
-        private readonly ItemHelper _itemHelper;
+        private readonly RequestMapper _requestMapper;
 
         internal DynoRepo(AWSCredentials credentials, RegionEndpoint endpoint)
         {
             _credentials = credentials;
             _endpoint = endpoint;
-            _itemHelper = ItemHelper.Instance;
+            _requestMapper = RequestMapper.Instance;
         }
 
         public bool IsConsistentRead { get; set; }
@@ -33,7 +33,7 @@ namespace DynORM.Implementations
                 throw new ArgumentNullException(nameof(item));
 
             var client = GetDynamoDbClient();
-            var putRequest = new RequestMaker<TModel>(item).ToRequest();
+            var putRequest = _requestMapper.ToRequest(item);
             var response = await client.PutItemAsync(putRequest);
         }
 
@@ -41,23 +41,9 @@ namespace DynORM.Implementations
         {
             if (item == null)
                 throw new ArgumentNullException(nameof(item));
-
-            var usable = condition.Build();
-            var client = GetDynamoDbClient();
-            var putRequest = new RequestMaker<TModel>(item).ToRequest();
-            putRequest.ConditionExpression = usable.GetQuery();
-
-            foreach (var kv in usable.GetNames())
-                if(!putRequest.ExpressionAttributeNames.ContainsKey(kv.Key))
-                    putRequest.ExpressionAttributeNames.Add(kv.Key, kv.Value);
-
-            /*
-            putRequest.ExpressionAttributeValues = usable
-                .GetValues()
-                .Select(x => new KeyValuePair<string, AttributeValue>(x.Key, x.Value.Item1))
-                .ToDictionary(x => x);
-                */
             
+            var client = GetDynamoDbClient();
+            var putRequest = _requestMapper.ToRequest(item, condition);
             var response = await client.PutItemAsync(putRequest);
         }
 
